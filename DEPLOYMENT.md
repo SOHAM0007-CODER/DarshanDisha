@@ -18,7 +18,7 @@ DarshanDisha is a static browser application. Routing runs in a browser Web Work
 
 4. Deploy from the **main** branch. Do not use `npm start` as a build command: it starts a local server and never finishes as a build.
 
-The build copies seven runtime files into `dist/`, including `worker.mjs`, its algorithm module, and `data/map.json`. The Vercel configuration explicitly serves `.mjs` files as JavaScript, including the module worker. There is no catch-all HTML rewrite, so missing module or JSON requests remain real 404s.
+The build copies the runtime files into `dist/`, including `worker.mjs`, its algorithm module, `data/map.json`, the 3D Algorithm Lab modules, and the locally served Three.js files in `vendor/three/`. The build fails if any relative module import or worker script is missing from its list. The Vercel configuration explicitly serves `.mjs` files as JavaScript, including the module worker. There is no catch-all HTML rewrite, so missing module or JSON requests remain real 404s.
 
 ## Check the build locally
 
@@ -34,6 +34,7 @@ The `dist/` output is generated and ignored by Git. Vercel creates it during dep
 - **Missing build script or wrong output directory:** deploy the latest `main` commit and use the settings above.
 - **Build keeps running:** replace a build command of `npm start` with `npm run build`.
 - **404 on the homepage:** check the repository root and confirm the build output includes `dist/index.html`.
+- **3D Algorithm Lab never appears:** inspect `/lab3d.mjs`, `/scene3d.mjs`, and `/vendor/three/three.module.js` on the deployed URL. They should return JavaScript. Without WebGL the lab shows its flat 2D view instead.
 - **Map never loads:** inspect `/data/map.json`, `/worker.mjs`, and `/engine.mjs` on the deployed URL. They should return their respective JSON or JavaScript files, not HTML.
 - **Module MIME type error:** use the committed `vercel.json`, which sets the JavaScript content type for `.mjs`.
 

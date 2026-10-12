@@ -29,51 +29,69 @@ export function makeGraph(data, settings={}) {
   return {nodes:data.nodes,edges,adj,objective:settings.objective||'distance'};
 }
 
+// h(v) for A*: straight-line distance to the target, divided by the maximum walking
+// speed in time mode. Other methods use h = 0. Shared with the replay inspector.
+export function heuristic(graph,target,method='astar') {
+  if(method!=='astar')return ()=>0;
+  const t=graph.nodes[target],speed=graph.objective==='time'?WALK_SPEED:1;
+  return v=>hypot(graph.nodes[v],t)/speed;
+}
+
+// record: false (no trace), true / 'compact' (selections, successful updates and pass
+// boundaries; unsuccessful edge checks and stale heap entries are counted on the next
+// event as `skipped` / `stale`), or 'full' (every edge check and stale heap entry as its
+// own event, intended for small teaching graphs).
 export function shortestPath(graph,source,target,method='dijkstra',record=true) {
-  const began=performance.now(), n=graph.nodes.length;
+  const began=performance.now(), n=graph.nodes.length, full=record==='full';
   const distance=new Float64Array(n).fill(Infinity),previous=new Int32Array(n).fill(-1),previousEdge=new Int32Array(n).fill(-1);
-  const trace=[], touched=new Set([source]);let checks=0,updates=0,expanded=0,passes=0;
+  const trace=[], touched=new Set([source]);let checks=0,updates=0,expanded=0,passes=0,stale=0,skipped=0,staleRun=0;
   distance[source]=0;
-  const event=e=>{if(record)trace.push(e);};
+  const event=e=>{if(!record)return;if(skipped){e.skipped=skipped;skipped=0;}if(staleRun){e.stale=staleRun;staleRun=0;}trace.push(e);};
+  const miss=e=>{if(full)event(e);else skipped++;};
   if(method==='bellman') {
     for(let pass=1;pass<n;pass++) {
-      let changed=false;passes=pass;event({type:'pass',pass});
+      let changed=0,passChecks=0;passes=pass;event({type:'pass',pass});
       for(const e of graph.edges) {
         if(e.closed)continue;
         for(const [u,v] of [[e.a,e.b],[e.b,e.a]]) {
-          checks++;
+          checks++;passChecks++;
           if(distance[u]+e.weight<distance[v]-1e-9) {
-            distance[v]=distance[u]+e.weight;previous[v]=u;previousEdge[v]=e.id;updates++;changed=true;touched.add(v);
+            distance[v]=distance[u]+e.weight;previous[v]=u;previousEdge[v]=e.id;updates++;changed++;touched.add(v);
             event({type:'relax',node:v,from:u,edge:e.id,cost:distance[v],pass});
-          }
+          } else miss({type:'check',node:v,from:u,edge:e.id,pass});
         }
       }
+      event({type:'pass-end',pass,updates:changed,checks:passChecks});
       if(!changed)break;
     }
     expanded=touched.size;
   } else {
-    const heuristic=v=>method==='astar'?hypot(graph.nodes[v],graph.nodes[target])/(graph.objective==='time'?WALK_SPEED:1):0;
-    const heap=new Heap(),done=new Uint8Array(n);heap.push({node:source,priority:heuristic(source),g:0});
+    const h=heuristic(graph,target,method);
+    const heap=new Heap(),done=new Uint8Array(n);heap.push({node:source,priority:h(source),g:0});
     while(heap.items.length) {
-      const item=heap.pop(),u=item.node;if(done[u]||item.g>distance[u]+1e-9)continue;
-      done[u]=1;expanded++;event({type:'visit',node:u,cost:distance[u]});
+      const item=heap.pop(),u=item.node;
+      if(done[u]||item.g>distance[u]+1e-9){stale++;if(full)event({type:'stale',node:u,g:item.g,priority:item.priority});else staleRun++;continue;}
+      done[u]=1;expanded++;event({type:'visit',node:u,cost:distance[u],heap:heap.items.length});
       if(u===target)break;
       for(const {to:v,edge:id} of graph.adj[u]) {
         checks++;const e=graph.edges[id],candidate=distance[u]+e.weight;
         if(candidate<distance[v]-1e-9) {
           distance[v]=candidate;previous[v]=u;previousEdge[v]=id;updates++;touched.add(v);
-          heap.push({node:v,priority:candidate+heuristic(v),g:candidate});event({type:'relax',node:v,from:u,edge:id,cost:candidate});
-        }
+          heap.push({node:v,priority:candidate+h(v),g:candidate});event({type:'relax',node:v,from:u,edge:id,cost:candidate});
+        } else miss({type:'check',node:v,from:u,edge:id});
       }
     }
+    if(!done[target])event({type:'exhausted'});
   }
-  if(!Number.isFinite(distance[target]))return {reachable:false,cost:Infinity,path:[],edgeIds:[],trace,metrics:{checks,updates,expanded,passes,ms:performance.now()-began}};
+  const base={source,target,method,detail:full?'full':record?'compact':'none',trace};
+  const metrics=()=>({checks,updates,expanded,passes,stale,ms:performance.now()-began});
+  if(!Number.isFinite(distance[target]))return {...base,reachable:false,cost:Infinity,path:[],edgeIds:[],metrics:metrics()};
   const path=[target],edgeIds=[];let u=target;
   while(u!==source) {if(previous[u]<0||path.length>n)throw new Error('Invalid predecessor chain');edgeIds.push(previousEdge[u]);u=previous[u];path.push(u);}
   path.reverse();edgeIds.reverse();
   const metres=edgeIds.reduce((s,id)=>s+graph.edges[id].length,0),seconds=edgeIds.reduce((s,id)=>s+graph.edges[id].seconds,0);
   event({type:'finish',node:target,cost:distance[target]});
-  return {reachable:true,cost:distance[target],path,edgeIds,metres,seconds,trace,metrics:{checks,updates,expanded,passes,ms:performance.now()-began}};
+  return {...base,reachable:true,cost:distance[target],path,edgeIds,metres,seconds,metrics:metrics()};
 }
 
 export function permutations(items) {
