@@ -75,6 +75,10 @@ Open **[localhost:5173](http://localhost:5173)** in your browser and keep the te
 
 **On Windows:** after downloading or cloning the project, you can also double-click **`START_DARSHAN.bat`**. Node.js must be installed and available on your PATH.
 
+## Deploy on Vercel
+
+To publish on Vercel, see **[DEPLOYMENT.md](DEPLOYMENT.md)**. The repository includes a static build and `vercel.json`; the local Node.js server is used only for local previews.
+
 ## Try a two-minute demo
 
 1. Keep **Manache Paach** selected and click **Find my path**. Start the animated walk.
