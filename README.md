@@ -207,6 +207,6 @@ The map uses a bundled **[OpenStreetMap](https://www.openstreetmap.org)** extrac
 ---
 
 <p align="center">
-  Created by <a href="https://github.com/SOHAM0007-CODER">Soham</a> for Design &amp; Analysis of Algorithms.<br />
+  Created by <strong>Ignix</strong> for Design &amp; Analysis of Algorithms.<br />
   <em>Finding the shortest way to Bappa.</em>
 </p>
