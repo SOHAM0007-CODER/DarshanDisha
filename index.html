@@ -4,6 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f8f5ee"><meta name="description" content="Explore Pune’s Manache Paach. Compare Dijkstra, Bellman–Ford and A* on real street geometry, with simulated crowds and optional darshan stops.">
   <title>Darshan · Pune’s paths, thoughtfully found</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -65,10 +66,66 @@
   </section>
   <section id="suggestionSection" class="suggestion-section" hidden><div class="suggestion-heading"><span class="small-icon"><svg><use href="#spark"/></svg></span><div><h2>A Bappa along the way?</h2><p>These stops add a small calculated detour. You decide.</p></div></div><div id="suggestionCards" class="suggestion-cards"></div></section>
   <section class="algorithm-section" id="algorithmSection">
-    <div class="section-heading"><div><p class="eyebrow">THE SCIENCE BEHIND THE WALK</p><h2>One journey. Three ways to find it.</h2></div><button id="compareButton" class="secondary-button">Open the algorithm lab <svg><use href="#arrow"/></svg></button></div>
+    <div class="section-heading"><div><p class="eyebrow">THE SCIENCE BEHIND THE WALK</p><h2>One journey. Three ways to find it.</h2></div><div class="section-actions"><div class="lab-switch" role="group" aria-label="Algorithm Lab view"><button data-labmode="2d" aria-pressed="true">2D comparison</button><button data-labmode="3d" aria-pressed="false"><span class="cube-icon" aria-hidden="true"></span>3D Algorithm Lab</button></div><button id="compareButton" class="secondary-button">Open the algorithm lab <svg><use href="#arrow"/></svg></button></div></div>
     <p class="algorithm-intro">Same streets. Same crowd weights. The same minimum cost — with a different search along the way.</p>
     <div class="algorithm-cards" id="algorithmCards"></div>
     <div class="lab-details" id="labDetails" hidden><div><span class="eyebrow">WHAT YOU’RE WATCHING</span><h3 id="traceTitle">A* looks toward the destination.</h3><p id="traceExplanation"></p><div class="trace-legend"><span><i class="frontier-swatch"></i> Distance updated</span><span><i class="visited-swatch"></i> Node selected</span><span><i class="final-swatch"></i> Final path</span></div></div><div class="pseudocode"><span id="traceCounter">READY TO EXPLORE</span><pre id="pseudocode"></pre></div></div>
+    <section class="lab3d" id="lab3d" hidden aria-labelledby="lab3dTitle">
+      <div class="lab3d-head"><div><p class="eyebrow">EXPLORE THE ALGORITHM · IN 3D</p><h3 id="lab3dTitle">A new perspective on every path.</h3><p class="lab3d-intro">Explore Pune in miniature and follow each decision through its streets. Open fullscreen for more room, or turn on <strong>Cost height</strong> to compare tentative distances above the map.</p></div></div>
+      <div class="lab3d-controls">
+        <div class="lab3d-field"><span class="field-label" id="graphLabel">GRAPH</span><div class="segment" role="group" aria-labelledby="graphLabel"><button data-graph="pune" aria-pressed="true">Your Pune journey</button><button data-graph="teach" aria-pressed="false">Teaching example</button></div></div>
+        <div class="lab3d-field"><span class="field-label" id="algoLabel">ALGORITHM</span><div class="segment" role="group" aria-labelledby="algoLabel"><button data-algo3d="dijkstra" aria-pressed="false">Dijkstra</button><button data-algo3d="bellman" aria-pressed="false">Bellman–Ford</button><button data-algo3d="astar" aria-pressed="false">A*</button></div></div>
+        <label class="lab3d-field" id="legField">JOURNEY LEG<select id="legSelect"></select></label>
+        <label class="lab3d-field" id="teachSourceField" hidden>FROM<select id="teachSource"></select></label>
+        <label class="lab3d-field" id="teachTargetField" hidden>TO<select id="teachTarget"></select></label>
+        <label class="lab3d-field" id="teachScenarioField" hidden>SCENARIO<select id="teachScenario"></select></label>
+        <label class="lab3d-toggle"><input type="checkbox" id="pillarToggle"> Show cost as height</label>
+        <button class="lab3d-learn" id="lab3dLearn">Start guided example</button>
+        <div class="lab3d-view-actions"><button id="lab3dPanelToggle" aria-expanded="true" aria-controls="lab3dPanel">Hide explanation</button><button id="lab3dFullscreen" aria-pressed="false">⛶ Fullscreen</button></div>
+      </div>
+      <div class="lab3d-body">
+        <div class="lab3d-stage-wrap">
+          <div class="lab3d-stage" id="lab3dStage">
+            <div class="lab3d-labels" id="lab3dLabels" aria-hidden="true"></div>
+            <div class="lab3d-status" id="lab3dStatus" role="status" hidden></div>
+            <div class="lab3d-camera" role="group" aria-label="Camera controls"><button data-camera="reset" title="Reset camera (R)">⟲ <span>Reset</span></button><button data-camera="top" title="Top-down view of the whole table (T)">⊤ <span>Top-down</span></button><button data-camera="left" aria-label="Rotate left" title="Rotate left (Q)">↶</button><button data-camera="right" aria-label="Rotate right" title="Rotate right (E)">↷</button><button data-camera="in" aria-label="Zoom in" title="Zoom in (+)">+</button><button data-camera="out" aria-label="Zoom out" title="Zoom out (−)">−</button></div>
+            <div class="lab3d-scale" id="lab3dScale"></div>
+            <div class="attribution" id="lab3dAttribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors · ODbL</a></div>
+          </div>
+          <ul class="lab3d-legend" aria-label="Legend">
+            <li><i class="lg-unknown"></i>Grey: not reached yet</li>
+            <li><i class="lg-tentative"></i>Gold: route found, may improve</li>
+            <li><i class="lg-settled"></i>Green: shortest cost confirmed</li>
+            <li><i class="lg-current"></i>Orange ring: looking here now</li>
+            <li><i class="lg-tree"></i>Thin gold road: best connection so far</li>
+            <li><i class="lg-check"></i>Arrow: testing this direction</li>
+            <li><i class="lg-path"></i>Thick orange road: final route</li>
+            <li><i class="lg-closed"></i>Red lane with ✕: closed</li>
+            <li><i class="lg-source"></i>Flag: source · <i class="lg-target"></i>Diamond: destination</li>
+          </ul>
+          <p class="lab3d-help">Drag to orbit, right-drag (or Shift-drag) to pan, scroll or pinch to zoom. With the model focused: arrow keys pan, + / − zoom, Q / E rotate, T top-down, R reset. Replay keys anywhere in the lab: <kbd>[</kbd> previous, <kbd>]</kbd> next, <kbd>P</kbd> play or pause.</p>
+        </div>
+        <aside class="lab3d-panel" id="lab3dPanel" aria-label="Step explanation">
+          <details class="lab3d-reading" open><summary>How to read this model</summary><p><b>Dots are road junctions.</b> Lines are roads connecting them. The flag is your start; the diamond is your destination.</p><p><b>The search tries possible roads.</b> It is not a person walking. Only the final thick orange route is the recommended walk.</p><p id="lab3dMeaning">Use Next to follow one decision at a time.</p></details>
+          <div class="lab3d-now"><strong id="lab3dWhat">—</strong><span id="lab3dStep">Step 0 of 0</span></div>
+          <p class="lab3d-strategy" id="lab3dStrategy"></p>
+          <nav class="lab3d-chapters" aria-label="Guided example chapters" id="lab3dChapters" hidden><button data-chapter="0">1 · Start</button><button data-chapter="1">2 · Choose</button><button data-chapter="2">3 · Compare</button><button data-chapter="3">4 · Result</button></nav>
+          <div class="lab3d-explain" id="lab3dExplain" aria-live="polite"><h4 id="lab3dEventTitle">—</h4><p id="lab3dEventText"></p><table class="lab3d-calc" id="lab3dCalc" hidden><tbody></tbody></table></div>
+          <details class="lab3d-technical"><summary>See the code and exact numbers</summary>
+          <ol class="lab3d-code" id="lab3dCode" aria-label="Pseudocode"></ol>
+          <div class="lab3d-inspector"><label for="inspectSelect" class="field-label">INSPECT A NODE</label><select id="inspectSelect"></select><dl id="inspectDetails"></dl></div>
+          <div class="lab3d-queue" id="lab3dQueue"></div>
+          </details>
+        </aside>
+      </div>
+      <div class="lab3d-replay" role="group" aria-label="Replay controls">
+        <button id="lab3dReset" aria-label="Reset replay" title="Reset">⏮</button><button id="lab3dPrev" aria-label="Previous step" title="Previous step ([)">← Back</button><button id="lab3dPlay" class="play-button" aria-label="Play replay"><svg><use href="#play"/></svg></button><button id="lab3dNext" aria-label="Next step" title="Next step (])">Next →</button>
+        <input type="range" id="lab3dSlider" min="0" max="0" value="0" aria-label="Replay position (recorded step)">
+        <label class="lab3d-speed" id="lab3dPuneSpeed">Speed<select id="lab3dSpeed"></select></label>
+        <label class="lab3d-speed teaching-speed" id="lab3dTeachingSpeedControl" title="0.1× to 2×. At 1×, one recorded step per second." hidden>Speed <span>0.1×</span><input id="lab3dTeachingSpeed" type="range" min="0.1" max="2" step="0.1" value="1" aria-label="Teaching animation speed"><span>2×</span><output id="lab3dSpeedValue" for="lab3dTeachingSpeed">1×</output></label>
+      </div>
+      <div class="lab3d-facts" id="lab3dFacts"></div>
+    </section>
     <div class="comparison-note" id="comparisonNote">The algorithms find paths between stops. A separate exact search chooses the visiting order.</div>
   </section>
   <section class="mandals-section"><div class="section-heading"><div><p class="eyebrow">FIVE STOPS. ONE PUNE TRADITION.</p><h2>The Manache Paach</h2></div><span class="section-aside">मानाचे पाच गणपती</span></div><div class="mandal-cards" id="mandalCards"></div></section>

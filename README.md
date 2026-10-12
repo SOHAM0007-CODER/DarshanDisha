@@ -12,7 +12,8 @@
   <img alt="Node.js 20 or newer" src="https://img.shields.io/badge/Node.js-20%2B-244d3e?style=flat-square" />
   <img alt="Three shortest path algorithms" src="https://img.shields.io/badge/Algorithms-Dijkstra_%C2%B7_Bellman--Ford_%C2%B7_A*-b45325?style=flat-square" />
   <img alt="Offline ready" src="https://img.shields.io/badge/Offline-Ready-244d3e?style=flat-square" />
-  <img alt="No runtime dependencies" src="https://img.shields.io/badge/Dependencies-0-244d3e?style=flat-square" />
+  <img alt="No npm runtime dependencies" src="https://img.shields.io/badge/npm_dependencies-0-244d3e?style=flat-square" />
+  <img alt="Three.js served locally" src="https://img.shields.io/badge/3D-Three.js_(vendored)-b45325?style=flat-square" />
 </p>
 
 <p align="center">
@@ -45,6 +46,7 @@ Then open **Algorithm Lab** to see how **Dijkstra, Bellman–Ford, and A\*** sol
 | **Animated walks** | Play, pause, scrub, reset, and change playback speed; optionally enable arrival bells. |
 | **Interactive map** | Pan, zoom, fit the route, show the crowd layer, or pick a custom starting junction. |
 | **Algorithm Lab** | Compare search traces, edge checks, updates, pseudocode, and measured computation time. |
+| **3D Algorithm Lab** | Replay each recorded step on a tabletop model of Pune or a small teaching graph, with cost pillars, live pseudocode and the relaxation arithmetic. |
 | **Walking guide** | Read the street sequence, save a text itinerary, or print the route. |
 | **Accessible layout** | Use mobile layouts, Marathi mandal labels, and reduced-motion support. |
 | **Offline demonstration** | Run the bundled map and application without API keys or internet access. |
@@ -86,6 +88,7 @@ To publish on Vercel, see **[DEPLOYMENT.md](DEPLOYMENT.md)**. The repository inc
 3. Select **Festival peak** and **Quickest in crowds**. Compare the estimated time and distance with the alternative route.
 4. Close a lane on the map and calculate the journey again.
 5. Open **Algorithm Lab**, replay the searches, and explain why the minimum costs agree while operation counts differ.
+6. Switch to **3D Algorithm Lab**, choose the **Teaching example**, and step through Dijkstra, Bellman–Ford and A\* one edge check at a time.
 
 For a fuller presentation and viva preparation, see the **[demo guide](DEMO_GUIDE.md)**.
 
@@ -136,6 +139,19 @@ Calculations run in a **Web Worker** on a fixed graph snapshot. The canvas rende
 
 For multi-leg journeys, operation counts are summed across legs. Bellman–Ford's **nodes reached** and Dijkstra/A\*'s **nodes selected** describe different operations; use **edge checks** as the shared comparison metric. Runtime and frame rate depend on the device.
 
+## The 3D Algorithm Lab
+
+In **Algorithm Lab**, switch from **2D comparison** to **3D Algorithm Lab**. The 2D view stays available.
+
+- **Same data, real events.** The model uses the journey's graph, weights, closures and the very runs the planner computed. Each replay step is an event recorded by `engine.mjs`; nothing is animated that the algorithm did not do. Each journey leg is its own search, so costs and predecessors reset when you change leg.
+- **Cost pillars.** Pillar height is the current tentative cost `g`, on a fixed scale for the whole replay (units shown). Undiscovered nodes (`g = ∞`) have no pillar. Heights are algorithm costs, not terrain.
+- **Shapes, not just colours.** Spheres are undiscovered, square pillars tentative (or reached, for Bellman–Ford), round pillars settled. A ring marks the current node, an arrow the lane being checked, a raised ribbon the final path, and a red lane with ✕ a closure.
+- **Explanation panel.** The current event, the matching pseudocode line, `candidate = g(u) + w(u,v)` against the old `g(v)`, whether an update happened, and an inspector with `g`, predecessor and, for A\*, `h` and `f = g + h`. Dijkstra and A\* show live tentative priorities separately from the binary heap, which can hold outdated (stale) entries.
+- **Teaching example.** An 11-node graph (`teaching-graph.mjs`) with straight-line-consistent weights, run through the same engine with **full traces**: every edge check, update, stale heap entry and pass boundary is a step. Scenarios include a closed lane and an unreachable destination; choosing the same From and To shows the zero-cost case.
+- **Compact traces on Pune.** Full traces of Bellman–Ford on the Pune graph would hold about 94,000 events per leg, so the planner records selections, updates and pass boundaries, and counts unsuccessful checks in the following step. The lab states this grouping.
+- **Replay controls.** Play, pause, previous, next, reset, speed, and a scrubber. Moving backward restores a sparse checkpoint and replays forward, so every position is rebuilt exactly. Replay speed is in recorded steps per second. Playback length does not measure runtime; measured operation counts and compute time are shown separately.
+- **Camera.** Drag to orbit, right-drag to pan, scroll to zoom, plus Reset and Top-down buttons and keyboard controls. The scene renders only when something changes, frees GPU memory when you leave, and recovers from WebGL context loss. Without WebGL, a flat 2D view replays the same state. Reduced-motion preferences turn off camera easing.
+
 ## Project structure
 
 ```text
@@ -145,13 +161,20 @@ DarshanDisha/
 ├── app.mjs              # Journey controls, playback, and interactions
 ├── map.mjs              # Offline canvas map and trace rendering
 ├── engine.mjs           # Algorithms, crowd weights, and itinerary planning
-├── worker.mjs           # Background route computation
+├── worker.mjs           # Background route computation (journeys and teaching runs)
+├── lab3d.mjs            # 3D Algorithm Lab controls, replay and explanations
+├── trace-player.mjs     # Deterministic replay state from recorded engine events
+├── scene3d.mjs          # Three.js tabletop renderer (loaded on demand)
+├── lab-flat.mjs         # 2D fallback renderer when WebGL is unavailable
+├── lab-colors.mjs       # Shared 3D lab palette
+├── teaching-graph.mjs   # 11-node teaching example run through the same engine
+├── vendor/three/        # Three.js 0.186.1 + OrbitControls, served locally (MIT)
 ├── server.mjs           # Local Node.js server
 ├── START_DARSHAN.bat    # Windows launcher
 ├── data/
 │   ├── map.json         # Bundled street geometry and routing graph
 │   └── osm-source.xml   # Original OpenStreetMap extract
-├── scripts/             # Python utilities for map preparation
+├── scripts/             # Map preparation, static build, Three.js vendoring
 ├── tests/               # Routing correctness tests
 ├── previews/            # Screenshots and README banner
 ├── DEMO_GUIDE.md        # Presentation walkthrough
@@ -159,7 +182,7 @@ DarshanDisha/
 └── VALIDATION.md        # Verification record
 ```
 
-The application uses **HTML, CSS, vanilla JavaScript ES modules, Canvas 2D, Web Workers, Web Audio, and Node.js built-ins**. Python is only needed for the optional data-preparation scripts.
+The application uses **HTML, CSS, vanilla JavaScript ES modules, Canvas 2D, Web Workers, Web Audio, and Node.js built-ins**. The 3D Algorithm Lab adds **WebGL via Three.js**, vendored in `vendor/three/` (refresh with `node scripts/vendor_three.mjs`) and loaded only when the lab opens. Python is only needed for the optional data-preparation scripts.
 
 ## Verify the model
 
@@ -168,6 +191,8 @@ npm test
 ```
 
 The nine routing tests cover an independent **Floyd–Warshall oracle**, agreement across all three algorithms on Pune routes, closed and disconnected paths, heuristic consistency, all 120 five-stop orders, optional-stop detours, crowd-based rerouting, identical start/destination, and accepted extras with traditional ordering.
+
+Ten replay tests (`tests/trace-player.test.mjs`) check that trace detail never changes results or operation counts, that compact traces account for every edge check, that stepping backward and scrubbing rebuild exactly the state of a fresh forward replay, that heap sizes and explanations match the engine, and that the teaching graph agrees with a Floyd–Warshall oracle for every source, target and scenario.
 
 Browser verification and animation observations are documented in **[VALIDATION.md](VALIDATION.md)**.
 
