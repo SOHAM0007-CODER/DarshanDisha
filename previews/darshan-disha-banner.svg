@@ -29,5 +29,5 @@
   <g transform="translate(1160 47)" stroke="#c6cdb0" fill="none" stroke-width="1.7" stroke-linejoin="round">
     <path d="M0 35H34M4 35V18H30V35M0 18L17 2L34 18ZM13 35V24H21V35M17 2V-6H27L23 -2H17"/>
   </g>
-  <text x="1095" y="313" font-family="Arial,sans-serif" font-size="10" letter-spacing="2" fill="#c6cdb0">FIVE STOPS. ONE TRADITION.</text>
+  <text x="1210" y="313" text-anchor="end" font-family="Arial,sans-serif" font-size="10" letter-spacing="2" fill="#c6cdb0">FIVE STOPS. ONE TRADITION.</text>
 </svg>
