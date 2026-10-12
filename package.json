@@ -1,0 +1,8 @@
+{
+  "name":"darshan-disha",
+  "version":"1.0.0",
+  "private":true,
+  "type":"module",
+  "description":"DarshanDisha: offline Pune Ganpati shortest-path simulator and DAA algorithm lab",
+  "scripts":{"start":"node server.mjs","test":"node --test tests/*.test.mjs"}
+}

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="340" viewBox="0 0 1280 340" role="img" aria-labelledby="title desc">
+  <title id="title">DarshanDisha</title>
+  <desc id="desc">An ivory and forest green banner with a saffron route linking five temple stops. Finding the shortest way to Bappa.</desc>
+  <defs>
+    <linearGradient id="forest" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#173e33"/><stop offset="1" stop-color="#0c2924"/></linearGradient>
+    <pattern id="grid" width="46" height="46" patternUnits="userSpaceOnUse"><path d="M46 0H0V46" fill="none" stroke="#618574" stroke-opacity=".12"/></pattern>
+  </defs>
+  <rect width="1280" height="340" rx="22" fill="#f7f4ec"/>
+  <path d="M790 0H1258Q1280 0 1280 22V318Q1280 340 1258 340H675Z" fill="url(#forest)"/>
+  <path d="M790 0H1258Q1280 0 1280 22V318Q1280 340 1258 340H675Z" fill="url(#grid)"/>
+  <circle cx="71" cy="55" r="5" fill="#ad4d22"/>
+  <text x="89" y="61" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="3" fill="#7b7866">MANACHE PAACH &amp; BEYOND</text>
+  <text x="62" y="155" font-family="Georgia,serif" font-size="76" fill="#173e33">Darshan<tspan fill="#ad4d22">Disha</tspan></text>
+  <text x="66" y="207" font-family="Georgia,serif" font-size="25" fill="#555b4d">Finding the shortest way to Bappa.</text>
+  <path d="M65 235H132" stroke="#ad4d22" stroke-width="3"/>
+  <text x="66" y="276" font-family="Arial,sans-serif" font-size="13" letter-spacing="1.6" fill="#7b7866">PUNE  ·  SHORTEST PATHS  ·  ANIMATED DARSHAN</text>
+  <g fill="none" stroke="#678675" stroke-opacity=".26" stroke-width="2">
+    <path d="M760 65H1202M733 145H1220M718 241H1247M834 24V309M967 45V317M1140 30V292"/>
+    <path d="M812 49L1090 282M810 279L1152 48M890 47V113H1174V294"/>
+  </g>
+  <path d="M863 76H1050V124H1140V208H967V273H824V208H863Z" fill="none" stroke="#edbf74" stroke-opacity=".1" stroke-width="15" stroke-linejoin="round"/>
+  <path d="M863 76H1050V124H1140V208H967V273H824V208H863Z" fill="none" stroke="#edbf74" stroke-width="3" stroke-linejoin="round"/>
+  <g fill="#f1d499" stroke="#163b31" stroke-width="3">
+    <circle cx="863" cy="76" r="16"/><circle cx="1050" cy="124" r="16"/><circle cx="1140" cy="208" r="16"/><circle cx="967" cy="273" r="16"/><circle cx="824" cy="208" r="16"/>
+  </g>
+  <g fill="#173e33" font-family="Georgia,serif" font-size="16" text-anchor="middle">
+    <text x="863" y="82">1</text><text x="1050" y="130">2</text><text x="1140" y="214">3</text><text x="967" y="279">4</text><text x="824" y="214">5</text>
+  </g>
+  <g transform="translate(1160 47)" stroke="#c6cdb0" fill="none" stroke-width="1.7" stroke-linejoin="round">
+    <path d="M0 35H34M4 35V18H30V35M0 18L17 2L34 18ZM13 35V24H21V35M17 2V-6H27L23 -2H17"/>
+  </g>
+  <text x="1095" y="313" font-family="Arial,sans-serif" font-size="10" letter-spacing="2" fill="#c6cdb0">FIVE STOPS. ONE TRADITION.</text>
+</svg>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f5ee"><meta name="description" content="Explore Pune’s Manache Paach. Compare Dijkstra, Bellman–Ford and A* on real street geometry, with simulated crowds and optional darshan stops.">
+  <title>Darshan · Pune’s paths, thoughtfully found</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg class="icon-defs" aria-hidden="true"><defs>
+  <symbol id="temple" viewBox="0 0 32 32"><path d="M6 27h20M8 27V16h16v11M5 16h22L16 4 5 16ZM13 27v-7h6v7M16 4V1m0 0h6l-2 3h-4M10 13h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="route" viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M5 8v8a3 3 0 0 0 3 3h8M8 5h8a3 3 0 0 1 3 3v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 3"/></symbol>
+  <symbol id="walk" viewBox="0 0 24 24"><circle cx="14" cy="4" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10 22 3-7-3-4 3-4 3 5 4 1M6 13l2-4 5-2M13 15l5 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7V5Z" fill="currentColor"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><path d="M7 5h4v14H7zm7 0h4v14h-4z" fill="currentColor"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0v6l2 3H4l2-3V9Zm4 12h4M12 1v2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</defs></svg>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="Darshan home"><span class="brand-icon"><svg><use href="#temple"/></svg></span><span>darshan<span class="brand-sub">पुणे · PUNE</span></span></a>
+  <nav aria-label="Main navigation"><button class="nav-button active" data-view="journey">Your journey</button><button class="nav-button" data-view="lab">Algorithm lab <span class="tiny-dot"></span></button><button class="nav-button" id="aboutButton">About the model</button></nav>
+  <button id="languageButton" class="language" aria-label="Switch mandal labels to Marathi">मराठी <span>↗</span></button>
+</header>
+<main>
+  <section class="intro">
+    <div><p class="eyebrow"><span class="sun-dot"></span> MANACHE PAACH & BEYOND</p><h1>A little less searching.<br class="mobile-break"> A little more <em>darshan.</em></h1><p class="intro-copy">Walk Pune’s treasured lanes. Find the shortest path. Make room for a Bappa along the way.</p></div>
+    <div class="intro-seal" aria-hidden="true"><span>मानाचे</span><strong>५</strong><span>पाच गणपती</span><svg><use href="#temple"/></svg></div>
+  </section>
+  <section class="workspace" aria-label="Interactive route simulator">
+    <aside class="planner">
+      <div class="panel-top"><span class="eyebrow">MAKE YOUR WAY</span><span class="step-badge">01 — 05</span></div>
+      <h2>Plan your darshan</h2>
+      <div class="segment mode-segment" aria-label="Journey type"><button class="selected" data-mode="all">Manache Paach</button><button data-mode="single">Choose a Ganpati</button></div>
+      <div class="locations">
+        <div class="location-row"><span class="location-pin start-pin"></span><label for="startSelect">START YOUR WALK<select id="startSelect"></select></label></div>
+        <div class="location-line"></div>
+        <div class="location-row"><span class="location-pin end-pin"></span><div class="all-destination" id="allDestination"><span class="field-label">YOUR DESTINATIONS</span><strong>The five honoured Ganpati</strong><small>One journey. Five beautiful stops.</small></div><label for="destinationSelect" id="destinationField" hidden>DESTINATION<select id="destinationSelect"></select></label></div>
+      </div>
+      <label for="orderSelect" class="field-label" id="orderLabel">VISITING ORDER<select id="orderSelect"><option value="optimal">Shortest overall journey</option><option value="traditional">Traditional honour order</option></select></label>
+      <div class="field-section"><p class="field-label">WHAT MATTERS MOST?</p><div class="objective-buttons"><button class="selected" data-objective="distance"><svg><use href="#route"/></svg><span>Shortest walk<small>Minimise metres</small></span></button><button data-objective="time"><svg><use href="#walk"/></svg><span>Quickest in crowds<small>Minimise walking time</small></span></button></div></div>
+      <div class="field-section crowd-section"><div class="section-label"><span class="field-label">CROWD SCENARIO</span><span class="sim-tag">SIMULATED</span></div><div class="crowd-presets"><button class="selected" data-crowd="15">Quiet morning</button><button data-crowd="85">Festival peak</button></div><label class="slider-label" for="crowdSlider"><span id="crowdText">Light crowds</span><strong id="crowdValue">15%</strong></label><input type="range" id="crowdSlider" min="0" max="100" value="15" aria-label="Simulated crowd intensity"><div class="range-labels"><span>Open lanes</span><span>Busy lanes</span></div></div>
+      <div class="closure-row"><button id="closureButton" class="closure-button"><span>⊘</span> Close a lane on the map</button><button id="clearClosure" hidden class="text-button">Reset</button></div>
+      <p id="closureHint" class="microcopy">Try a closure to watch the route find another way.</p>
+      <button id="calculateButton" class="primary-button"><span>Find my path</span><svg><use href="#arrow"/></svg></button>
+      <div class="planner-bottom"><svg><use href="#temple"/></svg><span>Made for the walk.<br><strong>Built to explain the algorithm.</strong></span></div>
+    </aside>
+    <div class="map-column">
+      <div class="map-toolbar"><div><span class="map-title">The heart of Pune</span><span class="map-sub">REAL STREET GEOMETRY · OFFLINE MAP</span></div><div class="map-toolbar-actions"><button id="fitButton" class="toolbar-button" title="Fit entire route">⌖ <span>Fit route</span></button><button id="crowdLayerButton" class="toolbar-button" aria-pressed="false">◉ <span>Crowd layer</span></button></div></div>
+      <div class="map-stage" id="mapStage">
+        <canvas id="mapCanvas" aria-label="Interactive Pune pedestrian map. Drag to pan, scroll to zoom. Mandals can also be selected from the route controls."></canvas>
+        <div class="map-note"><span class="live-dot"></span><span id="mapStatus">Preparing Pune’s lanes…</span></div>
+        <div class="compass" aria-hidden="true"><span>N</span><span class="compass-arrow">↑</span></div>
+        <div class="map-zoom"><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button></div>
+        <div class="map-legend"><span><i class="legend-route"></i> Your route</span><span><i class="legend-mandal"></i> Manache Paach</span><span id="legendAlternative" hidden><i class="legend-alt"></i> Other objective</span></div>
+        <div class="map-scale" id="mapScale">100 m</div>
+        <div class="attribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors · ODbL</a></div>
+        <div class="map-tooltip" id="mapTooltip" hidden></div>
+        <div class="map-loading" id="mapLoading"><span class="loading-ring"></span><strong>Finding your way…</strong></div>
+      </div>
+      <div class="playback"><button id="playButton" class="play-button" aria-label="Start animated journey"><svg><use href="#play"/></svg></button><div class="playback-info"><strong id="playbackTitle">Take the walk</strong><span id="playbackSubtitle">A smooth preview of your darshan journey</span></div><input type="range" id="progressSlider" min="0" max="1000" value="0" aria-label="Animation progress"><button id="stepButton" class="toolbar-button" hidden title="Advance one algorithm event">Step →</button><button id="speedButton" class="speed-button" title="Change playback speed">1×</button><button id="soundButton" class="toolbar-button" aria-pressed="false" aria-label="Enable arrival bell sounds" title="Optional arrival bell"><svg aria-hidden="true"><use href="#bell"/></svg></button><button id="resetPlayback" class="reset-button" aria-label="Reset animation">↺</button><span class="playback-progress" id="progressText">0%</span></div>
+      <div class="route-summary" id="routeSummary" aria-live="polite"><div class="summary-metric"><span>WALKING DISTANCE</span><strong id="distanceMetric">—<small>km</small></strong></div><div class="summary-metric"><span>ESTIMATED WALK</span><strong id="timeMetric">—<small>min</small></strong></div><div class="summary-metric"><span>DARSHAN STOPS</span><strong id="stopsMetric">5<small>mandals</small></strong></div><div class="route-reason"><span id="objectiveBadge">Shortest distance</span><p id="routeReason">Every chosen stop, connected by the shortest mapped walk.</p></div></div>
+      <div class="itinerary-bar"><div class="route-stop-strip" id="stopStrip"></div><button class="text-button" id="guideButton">Walking guide ↗</button></div>
+    </div>
+  </section>
+  <section id="suggestionSection" class="suggestion-section" hidden><div class="suggestion-heading"><span class="small-icon"><svg><use href="#spark"/></svg></span><div><h2>A Bappa along the way?</h2><p>These stops add a small calculated detour. You decide.</p></div></div><div id="suggestionCards" class="suggestion-cards"></div></section>
+  <section class="algorithm-section" id="algorithmSection">
+    <div class="section-heading"><div><p class="eyebrow">THE SCIENCE BEHIND THE WALK</p><h2>One journey. Three ways to find it.</h2></div><button id="compareButton" class="secondary-button">Open the algorithm lab <svg><use href="#arrow"/></svg></button></div>
+    <p class="algorithm-intro">Same streets. Same crowd weights. The same minimum cost — with a different search along the way.</p>
+    <div class="algorithm-cards" id="algorithmCards"></div>
+    <div class="lab-details" id="labDetails" hidden><div><span class="eyebrow">WHAT YOU’RE WATCHING</span><h3 id="traceTitle">A* looks toward the destination.</h3><p id="traceExplanation"></p><div class="trace-legend"><span><i class="frontier-swatch"></i> Distance updated</span><span><i class="visited-swatch"></i> Node selected</span><span><i class="final-swatch"></i> Final path</span></div></div><div class="pseudocode"><span id="traceCounter">READY TO EXPLORE</span><pre id="pseudocode"></pre></div></div>
+    <div class="comparison-note" id="comparisonNote">The algorithms find paths between stops. A separate exact search chooses the visiting order.</div>
+  </section>
+  <section class="mandals-section"><div class="section-heading"><div><p class="eyebrow">FIVE STOPS. ONE PUNE TRADITION.</p><h2>The Manache Paach</h2></div><span class="section-aside">मानाचे पाच गणपती</span></div><div class="mandal-cards" id="mandalCards"></div></section>
+  <footer><div class="footer-brand">darshan <span>पुणे</span></div><p>A Design & Analysis of Algorithms experience.<br>Street approaches are representative; crowds and closures are simulated.</p><button class="text-button" id="dataButton">Map & methodology ↗</button></footer>
+</main>
+<dialog id="infoDialog"><button id="closeDialog" class="dialog-close" aria-label="Close dialog">×</button><div id="dialogContent"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+<script type="module" src="app.mjs"></script>
+</body></html>
