@@ -81,13 +81,15 @@
         <label class="lab3d-field" id="teachScenarioField" hidden>SCENARIO<select id="teachScenario"></select></label>
         <label class="lab3d-toggle"><input type="checkbox" id="pillarToggle"> Show cost as height</label>
         <button class="lab3d-learn" id="lab3dLearn">Start guided example</button>
-        <div class="lab3d-view-actions"><button id="lab3dPanelToggle" aria-expanded="true" aria-controls="lab3dPanel">Hide explanation</button><button id="lab3dFullscreen" aria-pressed="false">⛶ Fullscreen</button></div>
+        <div class="lab3d-view-actions"><button id="lab3dPanelToggle" aria-expanded="true" aria-controls="lab3dPanel">Hide explanation</button><button id="lab3dStageFullscreen" aria-pressed="false" title="Fullscreen with only the 3D model and replay controls">⛶ 3D only</button><button id="lab3dFullscreen" aria-pressed="false">⛶ Fullscreen</button></div>
       </div>
       <div class="lab3d-body">
         <div class="lab3d-stage-wrap">
           <div class="lab3d-stage" id="lab3dStage">
             <div class="lab3d-labels" id="lab3dLabels" aria-hidden="true"></div>
             <div class="lab3d-status" id="lab3dStatus" role="status" hidden></div>
+            <div class="lab3d-caption" id="lab3dCaption" aria-hidden="true"><span id="lab3dCaptionStep"></span><strong id="lab3dCaptionTitle"></strong><p id="lab3dCaptionText"></p></div>
+            <button class="lab3d-stage-exit" id="lab3dStageExit" hidden>↙ Exit 3D view</button>
             <div class="lab3d-camera" role="group" aria-label="Camera controls"><button data-camera="reset" title="Reset camera (R)">⟲ <span>Reset</span></button><button data-camera="top" title="Top-down view of the whole table (T)">⊤ <span>Top-down</span></button><button data-camera="left" aria-label="Rotate left" title="Rotate left (Q)">↶</button><button data-camera="right" aria-label="Rotate right" title="Rotate right (E)">↷</button><button data-camera="in" aria-label="Zoom in" title="Zoom in (+)">+</button><button data-camera="out" aria-label="Zoom out" title="Zoom out (−)">−</button></div>
             <div class="lab3d-scale" id="lab3dScale"></div>
             <div class="attribution" id="lab3dAttribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors · ODbL</a></div>

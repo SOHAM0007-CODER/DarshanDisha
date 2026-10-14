@@ -6,7 +6,9 @@ import {TracePlayer,describe,explainSimply,pseudocode} from './trace-player.mjs'
 import {teachingData,teachingScenarios,teachingDefaults,teachingGraph} from './teaching-graph.mjs';
 
 const $=id=>document.getElementById(id);
-const speeds={teach:[.5,1,2,4],pune:[10,30,120,480,2000]};
+// Pune legs default to one decision per second so each step can be followed; faster
+// rates remain for skimming long searches.
+const speeds={teach:[.5,1,2,4],pune:[.5,1,2,5,10,30,120,480,2000]};
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const count=n=>Math.round(n).toLocaleString('en-IN');
 
@@ -20,7 +22,7 @@ export class Lab3D {
   constructor(app) {
     this.app=app;this.kind='pune';this.method='astar';this.leg=0;this.playing=false;this.inspect=null;this.cursor=0;
     this.teachSettings={...teachingDefaults};this.teach=null;this.job=0;this.renderer=null;
-    this.speedIndex={teach:1,pune:1};this.bind();
+    this.speedIndex={teach:1,pune:1};this.mode=null;this.bind();
     this.teachingSpeed=1;
   }
   bind() {
@@ -39,7 +41,9 @@ export class Lab3D {
       this.go(steps[Number(b.dataset.chapter)]);
       $('lab3dPanel').scrollTop=0;
     });
-    $('lab3dFullscreen').onclick=()=>this.toggleFullscreen();
+    $('lab3dFullscreen').onclick=()=>this.toggleFullscreen('full');
+    $('lab3dStageFullscreen').onclick=()=>this.toggleFullscreen('stage');
+    $('lab3dStageExit').onclick=()=>this.toggleFullscreen(this.mode);
     $('lab3dPanelToggle').onclick=()=>{
       const collapsed=$('lab3d').classList.toggle('panel-collapsed');
       $('lab3dPanelToggle').setAttribute('aria-expanded',String(!collapsed));
@@ -85,20 +89,27 @@ export class Lab3D {
     if(!this.renderer)await this.createRenderer();
     this.load(true);
   }
-  setImmersive(active) {
-    this.immersive=active;
+  // mode: 'full' keeps controls and explanation; 'stage' shows only the 3D model,
+  // a decision caption and the replay bar.
+  setImmersive(active,mode='full') {
+    const opener=this.mode==='stage'?'lab3dStageFullscreen':'lab3dFullscreen';
+    this.immersive=active;this.mode=active?mode:null;
     $('lab3d').classList.toggle('immersive',active);
+    $('lab3d').classList.toggle('stage-only',active&&mode==='stage');
     document.body.classList.toggle('lab-immersive',active);
-    $('lab3dFullscreen').textContent=active?'↙ Exit fullscreen':'⛶ Fullscreen';
-    $('lab3dFullscreen').setAttribute('aria-pressed',String(active));
-    if(!active)$('lab3dFullscreen').focus({preventScroll:true});
+    $('lab3dFullscreen').textContent=active&&mode==='full'?'↙ Exit fullscreen':'⛶ Fullscreen';
+    $('lab3dFullscreen').setAttribute('aria-pressed',String(active&&mode==='full'));
+    $('lab3dStageFullscreen').setAttribute('aria-pressed',String(active&&mode==='stage'));
+    $('lab3dStageExit').hidden=!(active&&mode==='stage');
+    if(!active)$(opener).focus({preventScroll:true});
   }
-  async toggleFullscreen() {
+  async toggleFullscreen(mode='full') {
     if(this.immersive){
-      if(document.fullscreenElement===$('lab3d'))await document.exitFullscreen();
-      this.setImmersive(false);return;
+      const switching=mode!==this.mode;
+      if(!switching&&document.fullscreenElement===$('lab3d')){this.nativeFullscreen=false;await document.exitFullscreen();}
+      this.setImmersive(switching,mode);return;
     }
-    this.setImmersive(true);
+    this.setImmersive(true,mode);
     try{if($('lab3d').requestFullscreen){await $('lab3d').requestFullscreen();this.nativeFullscreen=true;}}
     catch{/* The viewport-filling layout also works where native fullscreen is denied. */}
   }
@@ -169,8 +180,9 @@ export class Lab3D {
     // Each leg is an independent search: a fresh player starts again from g(s) = 0.
     this.player=this.run?new TracePlayer(this.graph,this.run):null;
     this.inspect=this.inspect!=null&&this.inspect<this.graph.nodes.length?this.inspect:null;
-    // Frame the region Dijkstra explores on this leg, so all three algorithms share a view.
-    if(this.player){const ref=this.kind==='pune'?this.result.comparisons.dijkstra.legs[this.leg]:null,nodes=new Set([this.player.source,this.player.target]);if(ref)for(const e of ref.trace)if(e.node!=null)nodes.add(e.node);const key=this.modelKey+'|'+this.leg;if(key!==this.focusKey){this.focusKey=key;this.renderer.focus?.(ref?[...nodes]:null);}}
+    // Frame the region this algorithm explores on this leg (plus source and destination),
+    // so its decisions fill the view instead of being specks on the whole city.
+    if(this.player){const ref=this.kind==='pune'?this.run:null,nodes=new Set([this.player.source,this.player.target]);if(ref)for(const e of ref.trace)if(e.node!=null)nodes.add(e.node);const key=this.modelKey+'|'+this.leg+'|'+this.method;if(key!==this.focusKey){this.focusKey=key;this.renderer.focus?.(ref?[...nodes]:null);}}
     $('lab3dSlider').max=this.player?.length||0;this.go(0);this.inspectOptions();
   }
   name(v) {
@@ -241,6 +253,7 @@ export class Lab3D {
     $('lab3dStep').textContent=`Step ${count(s.step)} of ${count(p.length)}`+(this.method==='bellman'&&s.pass?` · pass ${s.pass}`:'');
     $('lab3dSlider').value=s.step;$('lab3dSlider').setAttribute('aria-valuetext',`Step ${s.step} of ${p.length}: ${d.title}`);
     $('lab3dEventTitle').textContent=simple.title;$('lab3dEventText').textContent=simple.text;
+    $('lab3dCaptionStep').textContent=`Step ${count(s.step)} of ${count(p.length)}`;$('lab3dCaptionTitle').textContent=simple.title;$('lab3dCaptionText').textContent=simple.text;
     const calc=$('lab3dCalc');calc.hidden=!d.calc;
     if(d.calc){const c=d.calc;calc.tBodies[0].innerHTML=[
       [`Cost to ${this.name(c.from)}`,Number.isFinite(c.gu)?this.cost(c.gu):'Not reached'],[`This road adds`,this.cost(c.w)],
