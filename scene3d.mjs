@@ -189,13 +189,22 @@ export class Scene3D {
     const f=this.home||{x:0,z:0,size:this.extent||TABLE},half=Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2));
     // Fit the region's width and (foreshortened) depth for the current aspect ratio.
     const teaching=this.model?.kind==='teach';
-    const dist=Math.max(30,(teaching?1.02:1.25)*Math.max(f.size/2/(half*this.camera.aspect),f.size*.4/half)),dir=new THREE.Vector3(-.12,teaching?1.25:.78,.9).normalize();
+    const dist=Math.max(30,(teaching?1.02:1.25)*Math.max(f.size/2/(half*this.camera.aspect),f.size*.4/half)),dir=new THREE.Vector3(-.12,teaching?1.25:1.55,.9).normalize();
     this.flyTo(new THREE.Vector3(f.x,0,f.z),new THREE.Spherical().setFromVector3(dir.multiplyScalar(dist)),instant?0:this.intro.t!=null?1500:1000);
   }
   focus(nodes){
-    if(!nodes?.length||!this.nodeWorld){this.home=null;return this.resetCamera();}
+    if(!nodes?.length||!this.nodeWorld){this.home=null;this.setDetail(null);return this.resetCamera();}
     let x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;for(const v of nodes){const [x,z]=this.nodeWorld[v];x0=Math.min(x0,x);x1=Math.max(x1,x);z0=Math.min(z0,z);z1=Math.max(z1,z);}
-    this.home={x:(x0+x1)/2,z:(z0+z1)/2,size:Math.max(22,Math.max(x1-x0,z1-z0)+10)};this.resetCamera();
+    this.home={x:(x0+x1)/2,z:(z0+z1)/2,size:Math.max(14,Math.max(x1-x0,z1-z0)*1.15+6)};this.setDetail(this.home.size);this.resetCamera();
+  }
+  // Search marks scale with the framed region: a short leg is not buried under giant
+  // markers, and a long leg's explored junctions and roads stay visible from afar.
+  setDetail(size){
+    const base=STYLES[this.model?.kind||'pune'],k=this.model?.kind==='pune'&&size?THREE.MathUtils.clamp(size/40,.45,2.2):1;
+    this.detail=k;this.style={...base,road:base.road*k,node:base.node*k,path:base.path*k,marker:base.marker*k,edge:base.edge*k};
+    if(!this.group)return;this.nodeRadius=this.style.node;
+    for(const o of [this.current,this.sourceMarker,this.targetMarker])o.scale.setScalar(k);
+    for(const p of this.places)p.group.scale.setScalar(p.scale*k),p.group.position.set(p.world[0]+this.nodeRadius*2.4,0,p.world[1]-this.nodeRadius*2.4),p.top=3.2*p.scale*k;
   }
   topView(){const half=Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2)),d=1.08*(this.extent||TABLE)/2/(half*Math.min(1,this.camera.aspect));this.flyTo(new THREE.Vector3(),new THREE.Spherical(d*1.35,1e-4,0),900);}
   zoom(f){const p=this.pose();p.sph.radius*=f;this.flyTo(p.target,p.sph,380);}
@@ -207,7 +216,7 @@ export class Scene3D {
 
   setModel(model,intro=true) {
     this.model=model;this.clearModel();
-    const style=this.style=STYLES[model.kind],group=this.group=new THREE.Group();this.scene.add(group);
+    const style=this.style={...STYLES[model.kind]},group=this.group=new THREE.Group();this.scene.add(group);
     const xs=model.nodes.map(n=>n.x),ys=model.nodes.map(n=>n.y),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
     const s=this.unit=TABLE/Math.max(maxX-minX,maxY-minY),cx=(minX+maxX)/2,cy=(minY+maxY)/2;
     const toWorld=this.toWorld=(x,y)=>[(x-cx)*s,(y-cy)*s];
@@ -223,7 +232,7 @@ export class Scene3D {
     add(new THREE.BoxGeometry(W+pad*2+3,4,H+pad*2+3),new THREE.MeshLambertMaterial({color:colors.rim})).position.y=-2.05;
     add(new THREE.BoxGeometry(W+pad*2,.1,H+pad*2),new THREE.MeshLambertMaterial({color:colors.base})).position.y=-.05;
     if(model.parks?.length)add(flatShapes(model.parks,toWorld,.015),reveal(new THREE.MeshLambertMaterial({color:colors.park})));
-    if(model.buildings?.length)add(flatShapes(model.buildings,toWorld,.03,true),reveal(new THREE.MeshLambertMaterial({color:colors.building,side:THREE.DoubleSide}),{grow:true}));
+    if(model.buildings?.length)add(flatShapes(model.buildings,toWorld,.03,true),reveal(new THREE.MeshLambertMaterial({color:colors.building,side:THREE.DoubleSide,transparent:model.kind==='pune',opacity:.45,depthWrite:false}),{grow:true}));
     // Roads: every graph edge as a narrow ribbon; colours change with the replay.
     const lines=model.edges.map(e=>({points:e.points.map(p=>toWorld(p[0],p[1])),width:['primary','secondary','tertiary'].includes(e.kind)?style.major:style.road}));
     const roads=ribbon(lines,style.road,.06);this.roadRanges=roads.ranges;this.edgeLines=lines;
@@ -259,7 +268,7 @@ export class Scene3D {
     // Mandal markers: a small temple (plinth, shikhara and flag) per place.
     const plinth=new THREE.BoxGeometry(1,1,1).translate(0,.5,0),spire=new THREE.ConeGeometry(.75,1.6,6).translate(0,1.8,0),pennant=new THREE.BoxGeometry(.5,.3,.05).translate(.25,2.9,0);
     const templeMat=reveal(new THREE.MeshLambertMaterial({color:colors.temple}),{grow:true}),spireMat=reveal(new THREE.MeshLambertMaterial({color:'#c46a2c'}),{grow:true});geometries.push(plinth,spire,pennant);materials.push(templeMat,spireMat);
-    this.places=(model.places||[]).map(p=>{const t=new THREE.Group(),k=(p.rank?1.25:.95)*m,[x,z]=toWorld(p.x,p.y);t.add(new THREE.Mesh(plinth,templeMat),new THREE.Mesh(spire,spireMat),new THREE.Mesh(pennant,spireMat));t.scale.setScalar(k);t.position.set(x+r*2.4,0,z-r*2.4);group.add(t);return {...p,world:[x,z],top:3.2*k};});
+    this.places=(model.places||[]).map(p=>{const t=new THREE.Group(),k=(p.rank?1.25:.95)*m,[x,z]=toWorld(p.x,p.y);t.add(new THREE.Mesh(plinth,templeMat),new THREE.Mesh(spire,spireMat),new THREE.Mesh(pennant,spireMat));t.scale.setScalar(k);t.position.set(x+r*2.4,0,z-r*2.4);group.add(t);return {...p,world:[x,z],top:3.2*k,group:t,scale:k};});
     // Heuristic line (A*) and cost ruler.
     this.hLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineDashedMaterial({color:colors.heuristic,dashSize:style.marker,gapSize:style.marker*.6}));
     geometries.push(this.hLine.geometry);materials.push(this.hLine.material);group.add(this.hLine);
@@ -270,7 +279,7 @@ export class Scene3D {
     // Hover ring: a thin halo that eases in around the junction under the pointer.
     const halo=new THREE.TorusGeometry(1,.07,8,40).rotateX(Math.PI/2),haloMat=new THREE.MeshBasicMaterial({color:colors.check});
     this.hoverRing=add(halo,haloMat);this.hoverRing.visible=false;this.hover={v:-1,s:0};
-    this.dynamic=[];this.home=null;this.resetCamera(true);
+    this.dynamic=[];this.home=null;this.detail=1;this.resetCamera(true);
     // Intro: the camera swoops down from above while the city rises out of the table.
     if(intro&&!this.reducedMotion){
       this.intro.t=0;this.intro.uReveal.value=0;this.labelLayer.style.opacity=0;
@@ -310,7 +319,7 @@ export class Scene3D {
     for(let v=0;v<world.length;v++){
       const status=view.status(v),kind=status==='unknown'?'unknown':status==='settled'?'settled':'pillar',mesh=meshes[kind],i=mesh.count++;
       const h=this.height(view,v);
-      if(kind==='unknown'){pos.set(world[v][0],r*.45,world[v][1]);scale.setScalar(r*.4);}
+      if(kind==='unknown'){const u=r/Math.max(1,this.detail||1);pos.set(world[v][0],u*.45,world[v][1]);scale.setScalar(u*.4);}
       else {pos.set(world[v][0],0,world[v][1]);scale.set(r,h,r);}
       mesh.setMatrixAt(i,m4.compose(pos,q,scale));mesh.setColorAt(i,color.set(colors[status==='reached'?'tentative':status]));this.instanceNodes[kind].push(v);
       this.nodeVisuals[v]={pos:pos.clone(),scale:scale.clone(),color:color.clone(),kind};
@@ -324,8 +333,12 @@ export class Scene3D {
     const treeColor=new THREE.Color(colors.tree);
     this.roadRanges.forEach(([start,count],id)=>{const c=tree.has(id)&&!this.model.edges[id].closed?treeColor:this.roadColor[id];for(let k=start;k<start+count;k++)attr.setXYZ(k,c.r,c.g,c.b);});
     attr.needsUpdate=true;
-    // Dynamic overlays: final path and the lane being checked.
+    // Dynamic overlays: explored roads (city graph), final path and the lane being checked.
     this.clearDynamic();
+    if(this.model.kind==='pune'&&tree.size){
+      const lines=[...tree].filter(id=>!this.model.edges[id].closed).map(id=>this.edgeLines[id]);
+      this.addDynamic(ribbon(lines,this.style.road*2.2,.1).geometry,new THREE.MeshBasicMaterial({color:colors.tree}));
+    }
     const lift=v=>this.height(view,v);
     if(view.pathEdges?.length){
       let from=view.source;
