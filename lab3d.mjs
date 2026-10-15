@@ -12,6 +12,14 @@ const speeds={teach:[.5,1,2,4],pune:[.5,1,2,5,10,30,120,480,2000]};
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const count=n=>Math.round(n).toLocaleString('en-IN');
 
+// Full tour: the replay steps through the legs of the chosen visiting order instead of
+// one search's events. Same interface the replay controls use (step, length, seek).
+class TourPlayer {
+  constructor(length){this.length=length;this.step=0;}
+  seek(step){this.step=Math.max(0,Math.min(this.length,step));}
+}
+const tourCode=['for each pair of stops (a, b):','  leg[a][b] ← shortest path a → b   // Dijkstra or Bellman–Ford','best ← ∞','for each visiting order of the mandirs:   // 5 mandirs: 5! = 120','  total ← sum of leg[x][y] along the order','  if total < best: best ← total; bestOrder ← order','walk bestOrder, one leg after another'];
+
 export function webglAvailable() {
   if(/[?&]flat3d\b/.test(location.search))return false;
   try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'));}catch{return false;}
@@ -20,10 +28,31 @@ export function webglAvailable() {
 export class Lab3D {
   // app: {data, label(place), placeName(id), onMethod(method)}
   constructor(app) {
-    this.app=app;this.kind='pune';this.method='astar';this.leg=0;this.playing=false;this.inspect=null;this.cursor=0;
+    this.app=app;this.kind='pune';this.method='dijkstra';this.leg=0;this.playing=false;this.inspect=null;this.cursor=0;
     this.teachSettings={...teachingDefaults};this.teach=null;this.job=0;this.renderer=null;
     this.speedIndex={teach:1,pune:1};this.mode=null;this.bind();
     this.teachingSpeed=1;
+    let night=false;try{night=localStorage.getItem('darshan-lab-night')==='1';}catch{/* storage blocked: start in day */}
+    this.setNight(night,false);
+    let life=true;try{life=localStorage.getItem('darshan-lab-life')!=='0';}catch{/* storage blocked: keep city life on */}
+    this.setLife(life);
+  }
+  // Follow: the camera tracks the junction the search is looking at. The scene also turns
+  // it off (and reports back) when the camera is moved from the minimap.
+  setFollow(on){this.follow=on;this.syncFollow(on);this.renderer?.setFollow?.(on);}
+  syncFollow(on){this.follow=on;$('lab3dFollow').setAttribute('aria-pressed',String(on));}
+  // Traffic and crowds are decoration; switching them off lets the 3D view idle between steps.
+  setLife(on) {
+    this.life=on;try{localStorage.setItem('darshan-lab-life',on?'1':'0');}catch{/* not remembered */}
+    $('lab3dLife').setAttribute('aria-pressed',String(on));
+    this.renderer?.setLife?.(on);
+  }
+  // Day / night is scenery only: the replay, its colours and the text panel are unchanged.
+  setNight(night,animate=true) {
+    this.night=night;try{localStorage.setItem('darshan-lab-night',night?'1':'0');}catch{/* not remembered */}
+    const b=$('lab3dSky');$('lab3d').classList.toggle('night',night);
+    b.setAttribute('aria-pressed',String(night));b.innerHTML=night?'☀ <span>Day</span>':'☾ <span>Night</span>';b.title=night?'Switch to day (N)':'Switch to night (N)';
+    this.renderer?.setNight?.(night,animate);
   }
   bind() {
     $('lab3dLearn').onclick=()=>{
@@ -55,7 +84,7 @@ export class Lab3D {
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&this.immersive&&!document.fullscreenElement)this.setImmersive(false);});
     document.querySelectorAll('[data-graph]').forEach(b=>b.onclick=()=>this.setKind(b.dataset.graph));
     document.querySelectorAll('[data-algo3d]').forEach(b=>b.onclick=()=>{this.setMethod(b.dataset.algo3d);this.app.onMethod?.(this.method);});
-    $('legSelect').onchange=e=>{this.leg=Number(e.target.value);this.load();};
+    $('legSelect').onchange=e=>{this.leg=e.target.value==='tour'?'tour':Number(e.target.value);this.load();};
     const letters=teachingData.nodes.map((n,i)=>`<option value="${i}">${n.label}</option>`).join('');
     $('teachSource').innerHTML=letters;$('teachTarget').innerHTML=letters;
     $('teachScenario').innerHTML=Object.entries(teachingScenarios).map(([id,s])=>`<option value="${id}">${s.label}</option>`).join('');
@@ -75,11 +104,14 @@ export class Lab3D {
       this.renderer?.setAnimationSpeed?.(this.teachingSpeed);if(this.player)this.renderFacts();
     };
     $('inspectSelect').onchange=e=>{this.inspect=e.target.value===''?null:Number(e.target.value);this.render();};
+    $('lab3dSky').onclick=()=>this.setNight(!this.night);
+    $('lab3dLife').onclick=()=>this.setLife(!this.life);
+    $('lab3dFollow').onclick=()=>this.setFollow(!this.follow);
     document.querySelectorAll('[data-camera]').forEach(b=>b.onclick=()=>{const r=this.renderer;if(!r)return;({reset:()=>r.resetCamera(),top:()=>r.topView(),left:()=>r.rotate(-15),right:()=>r.rotate(15),in:()=>r.zoom(1/1.25),out:()=>r.zoom(1.25)})[b.dataset.camera]();});
     this.keys=e=>{
       if(!this.open||e.ctrlKey||e.metaKey||e.altKey||!$('lab3d').contains(e.target)||/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
       const k=e.key.toLowerCase();
-      if(k==='[')this.go(this.player.step-1);else if(k===']')this.go(this.player.step+1);else if(k==='p')this.toggle();else return;
+      if(k==='[')this.go(this.player.step-1);else if(k===']')this.go(this.player.step+1);else if(k==='p')this.toggle();else if(k==='n')this.setNight(!this.night);else if(k==='f')this.setFollow(!this.follow);else return;
       e.preventDefault();
     };
     document.addEventListener('keydown',this.keys);
@@ -121,9 +153,9 @@ export class Lab3D {
     this.renderer?.dispose();this.renderer=null;this.modelKey=null;$('lab3dLabels').replaceChildren();
   }
   async createRenderer() {
-    const stage=$('lab3dStage'),labels=$('lab3dLabels'),options={onPick:v=>{this.inspect=v;this.render();},onStatus:s=>this.status(s),reducedMotion:reduced()};
+    const stage=$('lab3dStage'),labels=$('lab3dLabels'),options={onPick:v=>{this.inspect=v;this.render();},onFollow:on=>this.syncFollow(on),onStatus:s=>this.status(s),reducedMotion:reduced()};
     if(webglAvailable()) {
-      try{const {Scene3D}=await import('./scene3d.mjs');this.renderer=new Scene3D(stage,labels,options);this.flat=false;this.status(null);return;}
+      try{const {Scene3D}=await import('./scene3d.mjs');this.renderer=new Scene3D(stage,labels,options);this.renderer.setNight(this.night,false);this.renderer.setLife(this.life);if(this.follow)this.renderer.setFollow(true);this.flat=false;this.status(null);return;}
       catch(e){console.warn('3D renderer unavailable; using the flat view.',e);}
     }
     const {FlatScene}=await import('./lab-flat.mjs');this.renderer=new FlatScene(stage,labels,options);this.flat=true;
@@ -172,11 +204,20 @@ export class Lab3D {
         const data=this.app.data;this.graph=makeGraph(data,r.settings);
         this.renderer.setModel({kind:'pune',nodes:data.nodes,edges:this.graph.edges,buildings:data.buildings,parks:data.parks,places:data.places.filter(p=>p.rank||r.order.includes(p.id))});this.modelKey=key;
       }
-      const legs=r.comparisons[this.method].legs;if(resetLeg||this.leg>=legs.length)this.leg=0;
-      $('legSelect').innerHTML=legs.map((l,i)=>`<option value="${i}">Leg ${i+1} of ${legs.length}: ${this.app.placeName(r.order[i])} → ${this.app.placeName(r.order[i+1])}${l.reachable?'':' (no route)'}</option>`).join('')||'<option>No leg: already at the destination</option>';
+      // A journey with several stops opens on its full tour; each leg's search is one pick away.
+      const legs=r.comparisons[this.method].legs,tour=legs.length>1&&legs.every(l=>l.reachable);
+      if(resetLeg||this.leg==='tour'&&!tour||this.leg!=='tour'&&this.leg>=legs.length)this.leg=tour?'tour':0;
+      $('legSelect').innerHTML=(tour?`<option value="tour">Full tour: all ${legs.length} legs · ${r.orderSearch?'shortest order to visit every mandir':'your stops in order'}</option>`:'')+legs.map((l,i)=>`<option value="${i}">Leg ${i+1} of ${legs.length}: ${this.app.placeName(r.order[i])} → ${this.app.placeName(r.order[i+1])}${l.reachable?'':' (no route)'}</option>`).join('')||'<option>No leg: already at the destination</option>';
       $('legSelect').value=this.leg;$('legSelect').disabled=legs.length<2;
+      if(this.leg==='tour'){
+        this.tour={legs,order:r.order};this.run=null;this.player=new TourPlayer(legs.length);this.inspect=null;
+        const key=this.modelKey+'|tour|'+r.order.join();
+        if(key!==this.focusKey){this.focusKey=key;this.renderer.focus?.([...new Set(legs.flatMap(l=>l.path))]);}
+        $('lab3dSlider').max=legs.length;this.go(0);this.inspectOptions();return;
+      }
       this.run=legs[this.leg]||null;
     }
+    this.tour=null;
     // Each leg is an independent search: a fresh player starts again from g(s) = 0.
     this.player=this.run?new TracePlayer(this.graph,this.run):null;
     this.inspect=this.inspect!=null&&this.inspect<this.graph.nodes.length?this.inspect:null;
@@ -199,7 +240,7 @@ export class Lab3D {
   }
   inspectOptions() {
     const sel=$('inspectSelect'),opts=[['','Current node']];
-    if(this.player){
+    if(this.player&&!this.tour){
       if(this.kind==='teach')teachingData.nodes.forEach((n,i)=>opts.push([i,n.label]));
       else{
         const seen=new Set();const push=v=>{if(!seen.has(v)){seen.add(v);opts.push([v,this.name(v)+(v===this.player.source?' (source)':v===this.player.target?' (destination)':'')]);}};
@@ -236,6 +277,7 @@ export class Lab3D {
   setPlayIcon(){$('lab3dPlay').innerHTML=`<svg aria-hidden="true"><use href="#${this.playing?'pause':'play'}"/></svg>`;$('lab3dPlay').setAttribute('aria-label',this.playing?'Pause replay':'Play replay');}
 
   render(animate=false) {
+    if(this.tour)return this.renderTour();
     const p=this.player,what=$('lab3dWhat');
     $('lab3dCode').innerHTML=pseudocode[this.method].map(l=>`<li>${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</li>`).join('');
     if(!p) {
@@ -246,7 +288,7 @@ export class Lab3D {
     }
     const s=p.state,d=describe(p,v=>this.name(v),x=>this.cost(x)),simple=explainSimply(p,v=>this.name(v),x=>this.cost(x));
     $('lab3dChapters').hidden=this.kind!=='teach';
-    $('lab3dStrategy').textContent={dijkstra:'Dijkstra: always explore the waiting junction with the lowest cost from the start.',bellman:'Bellman–Ford: check all roads repeatedly, keeping cheaper connections until a whole round changes nothing.',astar:'A*: explore using cost so far + an estimate of the cost still to go. The dashed line shows the straight-line estimate, not a walkable road.'}[this.method];
+    $('lab3dStrategy').textContent={dijkstra:'Dijkstra: always explore the waiting junction with the lowest cost from the start.',bellman:'Bellman–Ford: check all roads repeatedly, keeping cheaper connections until a whole round changes nothing.'}[this.method];
     $('lab3dMeaning').textContent=this.kind==='teach'?'Letters name junctions. Road labels show the cost of that road in metres. Node labels show the best total from the start; “?” means no route is known yet.':'This is the real Pune street graph. Buildings give location context; the search happens on the junctions and roads. Try the guided example to learn the same rules on a smaller map.';
     const legText=this.kind==='pune'?` · Leg ${this.leg+1} of ${this.result.comparisons[this.method].legs.length}: ${this.name(p.source)} → ${this.name(p.target)}`:` · Teaching example: ${this.name(p.source)} → ${this.name(p.target)}`;
     what.textContent=names[this.method]+legText;
@@ -273,27 +315,67 @@ export class Lab3D {
       if(p.target!==p.source)labels.push({key:'dst',node:p.target,text:'Destination · '+this.name(p.target),cls:'dst',lift:4});
     }
     if(s.edge>=0&&this.kind==='teach')labels.push({key:'edge',edge:s.edge,text:`Road: ${this.cost(this.graph.edges[s.edge].weight)} ${s.last.updated?'✓':'✕'}`,cls:s.last.updated?'yes':'no'});
-    if(this.method==='astar'&&s.current>=0&&!s.finished)labels.push({key:'h',hline:true,text:`h(${this.name(s.current)}) = ${this.cost(p.h(s.current))}`,cls:'h'});
     if(pillars)for(let i=1;i<=4;i++)labels.push({key:'r'+i,ruler:i/4,text:this.cost(p.maxCost*i/4),cls:'ruler'});
     if(this.inspect!=null&&this.inspect!==p.source&&this.inspect!==p.target&&this.kind==='pune')labels.push({key:'inspect',node:this.inspect,text:'Inspecting · '+this.name(this.inspect),cls:'inspect'});
-    $('lab3dScale').innerHTML=pillars?`<strong>Taller = more cost from the start.</strong> Full height = ${this.cost(p.maxCost)}. A shorter pillar means a cheaper known route, not a shorter building.`:`<strong>${s.finished?'The thick orange line is your route.':'The orange ring is the search’s attention.'}</strong> ${this.kind==='teach'?'Road number = one road’s cost. Node number = total from start.':'Colored branches are options being explored, not a person walking.'}`;
+    $('lab3dScale').innerHTML=pillars?`<strong>Taller = more cost from the start.</strong> Full height = ${this.cost(p.maxCost)}. A shorter pillar means a cheaper known route, not a shorter building.`:`<strong>${s.finished?'The thick orange line is your route.':'The orange car is the search’s attention.'}</strong> ${this.kind==='teach'?'Road number = one road’s cost. Node number = total from start.':'Colored branches are options being explored, not a person walking.'}`;
     this.renderer?.setAnimationSpeed?.(this.teachingSpeed);
     this.renderer?.setView({animate,dist:s.dist,predEdge:s.predEdge,status:v=>p.status(v),current:s.current,edge:s.edge,edgeTo:s.edgeTo,updated:!!s.last.updated,source:p.source,target:p.target,
       pathEdges:path?.edges||[],pillars,maxCost:p.maxCost,method:this.method,finished:s.finished,labels});
   }
+  // Full tour: draw the winning visiting order one leg at a time, with numbered stops, and
+  // explain the order search (every order costed from its shortest legs).
+  renderTour() {
+    const {legs,order}=this.tour,k=this.player.step,n=legs.length,r=this.result,search=r.orderSearch,pn=id=>this.app.placeName(id);
+    const stops=order.map(id=>this.app.data.places.find(p=>p.id===id)),total=legs.reduce((s,l)=>s+l.cost,0),done=legs.slice(0,k).reduce((s,l)=>s+l.cost,0);
+    const trad=r.settings.mode==='all'&&r.settings.order!=='traditional'?r.traditionalCost:null;
+    $('lab3dChapters').hidden=true;
+    $('lab3dCode').innerHTML=tourCode.map((l,i)=>`<li${i===(k===0?5:6)?' aria-current="step"':''}>${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</li>`).join('');
+    $('lab3dWhat').textContent=`${r.settings.mode==='all'?'Manache Paach':'Your journey'} · full tour, ${n} legs`;
+    $('lab3dStep').textContent=`Leg ${k} of ${n} drawn`;
+    $('lab3dSlider').value=k;$('lab3dSlider').setAttribute('aria-valuetext',`Leg ${k} of ${n} drawn`);
+    $('lab3dStrategy').textContent=`Two layers: ${names[this.method]} finds the shortest path between each pair of stops, then every visiting order is costed by adding up its legs, and the cheapest order wins.`;
+    let title,text;
+    if(k===0){
+      title=search?`${search.evaluated} visiting orders compared`:'Your stops, in order';
+      text=search?`Starting from ${pn(order[0])}, the ${n} mandirs can be visited in ${n}! = ${search.evaluated} different orders. Each order's total is the sum of its shortest legs. The best order totals ${this.cost(total)}; the worst would be ${this.cost(search.worst.cost)}. Press Play to draw the winning tour leg by leg.`
+        :`This journey has ${n} legs in the order shown. Press Play to draw it leg by leg.`;
+    } else if(k<n){
+      title=`Leg ${k}: ${pn(order[k-1])} → ${pn(order[k])}`;
+      text=`This leg is the shortest path between the two stops: ${this.cost(legs[k-1].cost)}. Tour so far: ${this.cost(done)} of ${this.cost(total)}.`;
+    } else {
+      title=`Shortest tour: ${this.cost(total)}`;
+      text=`${order.map(pn).join(' → ')}. `+(trad==null?'':Math.abs(trad-total)<.05?'This is also the traditional order (Manacha 1 → 5).':`The traditional order (Manacha 1 → 5) would total ${this.cost(trad)}, so this order saves ${this.cost(trad-total)}.`);
+    }
+    $('lab3dEventTitle').textContent=title;$('lab3dEventText').textContent=text;
+    $('lab3dCaptionStep').textContent=`Leg ${k} of ${n}`;$('lab3dCaptionTitle').textContent=title;$('lab3dCaptionText').textContent=text;
+    // Leg table: every leg with its cost; drawn legs are ticked, the newest is highlighted.
+    const calc=$('lab3dCalc');calc.hidden=false;
+    calc.tBodies[0].innerHTML=legs.map((l,i)=>`<tr${i===k-1?' class="yes"':''}><th scope="row">${i<k?'✓ ':''}${i+1}. ${pn(order[i])} → ${pn(order[i+1])}</th><td>${this.cost(l.cost)}</td></tr>`).join('')+`<tr class="${k===n?'yes':'no'}"><th scope="row">Total</th><td>${this.cost(total)}</td></tr>`;
+    // Ranking of visiting orders (when the order was optimised).
+    const short=o=>o.slice(1).map(pn).join(' → ');
+    $('lab3dQueue').innerHTML=search?`<h5>Cheapest visiting orders · ${search.evaluated} compared</h5><ol class="frontier">${search.top.map(t=>`<li><span>${short(t.order)}</span><span>${this.cost(t.cost)}</span></li>`).join('')}</ol><p class="note">Most expensive order: ${short(search.worst.order)} · ${this.cost(search.worst.cost)}.${trad==null?'':` Traditional order 1 → 5: ${this.cost(trad)}.`}</p>`
+      :`<h5>Visiting order</h5><p>${r.settings.order==='traditional'?'You chose the traditional order, so it is kept as given.':'The order of your stops was chosen to keep the journey shortest.'}</p>`;
+    $('inspectDetails').innerHTML='';
+    const m=r.comparisons[this.method].metrics;
+    $('lab3dFacts').innerHTML=`<div class="fact-row">${[[this.cost(total),'whole tour'],[n,'legs'],[search?search.evaluated:1,'orders compared'],[count(m.checks),'edge checks, all legs'],[m.ms.toFixed(2)+' ms','search time, all legs']].map(([v,t])=>`<div><strong>${v}</strong><span>${t}</span></div>`).join('')}</div><p>Each leg is an independent shortest-path search; pick a single leg above to replay its search decision by decision. The visiting-order search reuses those leg costs, so it never walks the map again.</p>`;
+    $('lab3dScale').innerHTML=`<strong>Numbered pins are the visiting order.</strong> The orange line is the tour drawn so far; press Play to add the next leg.`;
+    // Scene: route so far, numbered stops, and the car parked at the latest stop reached.
+    const N=this.graph.nodes.length,labels=stops.map((p,i)=>({key:'stop'+i,node:p.node,lift:2,text:`${i===0?'Start':i}. ${this.app.label(p)}${i>0&&i<=k?' ✓':''}`,cls:i===0?'src':i<=k?'yes':'place'}));
+    this.renderer?.setView({animate:false,dist:new Array(N).fill(Infinity),predEdge:new Array(N).fill(-1),status:()=>'unknown',current:stops[k].node,edge:-1,edgeTo:-1,updated:false,
+      source:stops[0].node,target:stops[n].node,pathEdges:legs.slice(0,k).flatMap(l=>l.edgeIds),pillars:false,maxCost:0,method:this.method,finished:true,labels,followAt:stops[k].node});
+  }
   renderInspector() {
-    const p=this.player,v=this.inspect??(p.state.current>=0?p.state.current:p.source),i=p.inspect(v),astar=this.method==='astar';
+    const p=this.player,v=this.inspect??(p.state.current>=0?p.state.current:p.source),i=p.inspect(v);
     const status={unknown:'Undiscovered: g = ∞',tentative:'Tentative: g may still decrease',settled:'Settled: g is final',reached:'Reached: g may still decrease in a later pass',final:'Final: a full pass changed nothing'}[i.status];
     const pred=i.pred>=0?`${this.name(i.pred)} (lane ${this.cost(this.graph.edges[i.predEdge].weight)})`:v===p.source?'none (source)':'none yet';
     const rows=[['Node',this.name(v)+(this.inspect==null?' (current)':'')],['Status',status],['Known cost g',this.cost(i.g)]];
-    if(astar)rows.push(['Heuristic h',this.cost(i.h)+' (straight line'+(this.unit()==='s'?' ÷ 1.25 m/s':'')+')'],['f = g + h',Number.isFinite(i.g)?`${this.cost(i.g)} + ${this.cost(i.h)} = ${this.cost(i.f)}`:'∞']);
     rows.push(['Predecessor',pred]);
     $('inspectDetails').innerHTML=rows.map(([k,x])=>`<dt>${k}</dt><dd>${x}</dd>`).join('');
   }
   renderQueue() {
     const p=this.player,el=$('lab3dQueue');
     if(this.method==='bellman'){el.innerHTML=`<h5>No priority queue</h5><p>Bellman–Ford checks every open directed lane in each pass, in a fixed order. ${p.state.converged?'The last pass changed nothing, so every g is final.':`Pass ${p.state.pass||1} of at most V − 1 = ${count(p.n-1)}.`}</p>`;return;}
-    const f=p.frontier(5),key=this.method==='astar'?'f = g + h':'g',heap=p.heapEntries(),stale=Math.max(0,p.state.heapSize-f.total);
+    const f=p.frontier(5),key='g',heap=p.heapEntries(),stale=Math.max(0,p.state.heapSize-f.total);
     const rows=f.items.map(x=>`<li><span>${this.name(x.node)}</span><span>${this.cost(x.priority)}</span></li>`).join('')||'<li><span>None</span><span></span></li>';
     let heapText=`Binary heap: ${count(p.state.heapSize)} entr${p.state.heapSize===1?'y':'ies'}, of which ${count(stale)} ${stale===1?'is':'are'} outdated (stale) and will be skipped when popped.`;
     if(heap)heapText+=`</p><ol class="heap-list">${heap.slice(0,8).map(x=>`<li class="${x.stale?'stale':''}">${this.name(x.node)} · key ${this.cost(x.priority)}${x.stale?' · stale':''}</li>`).join('')}</ol><p class="note">`;

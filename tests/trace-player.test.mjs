@@ -18,7 +18,7 @@ test('Beginner narration distinguishes improved, rejected, finished and unreacha
   assert.match(explainSimply(player,name,cost).text,/keep the existing connection/);
   player.seek(player.length);assert.match(explainSimply(player,name,cost).text,new RegExp(String(run.cost)));
   for(const method of algorithms){const g=teachingGraph({scenario:'isolated'}),r=runTeaching({scenario:'isolated'}).runs[method],p=new TracePlayer(g,r);p.seek(p.length);assert.match(explainSimply(p,name,cost).title,/No open route/);}
-  const same=runTeaching({source:0,target:0}).runs.astar,p=new TracePlayer(graph,same);p.seek(p.length);assert.match(explainSimply(p,name,cost).text,/no walking is needed/);
+  const same=runTeaching({source:0,target:0}).runs.dijkstra,p=new TracePlayer(graph,same);p.seek(p.length);assert.match(explainSimply(p,name,cost).text,/no walking is needed/);
 });
 
 test('Trace detail does not change any result or operation count',()=>{
@@ -79,7 +79,7 @@ test('Backward steps and scrubbing reproduce the same state as a fresh forward r
 
 test('Compact heap sizes match the reconstructed heap of a full trace',()=>{
   const g=makeGraph(data,{objective:'time',crowd:85});
-  for(const method of ['dijkstra','astar']){
+  for(const method of ['dijkstra']){
     const full=new TracePlayer(g,shortestPath(g,p('shaniwar'),p('kesari'),method,'full'));
     for(let k=0;k<=full.length;k+=1){full.seek(k);assert.equal(full.state.heap.length,full.state.heapSize);}
     full.seek(full.length);assert.equal(full.state.mismatch,0);
@@ -99,15 +99,12 @@ test('Teaching graph: weights, consistency and an independent oracle',()=>{
   }
 });
 
-test('Teaching graph shows greedy selection, repeated passes and heuristic pruning',()=>{
+test('Teaching graph shows greedy selection and repeated passes',()=>{
   const {runs}=runTeaching();
-  assert.ok(runs.astar.metrics.expanded<runs.dijkstra.metrics.expanded,'A* settles fewer nodes');
   assert.ok(runs.bellman.metrics.passes>=4,'Bellman–Ford needs several passes in this edge order');
   assert.ok(runs.dijkstra.trace.some(e=>e.type==='stale'),'Dijkstra meets an outdated heap entry');
-  // Dijkstra selects nodes in nondecreasing g; A* in nondecreasing f.
-  const g=teachingGraph(),player=new TracePlayer(g,runs.astar);
+  // Dijkstra selects nodes in nondecreasing g.
   const gs=runs.dijkstra.trace.filter(e=>e.type==='visit').map(e=>e.cost);assert.deepEqual(gs,[...gs].sort((a,b)=>a-b));
-  const fs=runs.astar.trace.filter(e=>e.type==='visit').map(e=>e.cost+player.h(e.node));fs.slice(1).forEach((f,i)=>assert.ok(f>=fs[i]-1e-9));
   // A relaxation followed by a later improvement of the same node (E: 300 then 297).
   const e=teachingData.nodes.findIndex(n=>n.id==='E'),updates=runs.dijkstra.trace.filter(x=>x.type==='relax'&&x.node===e).map(x=>x.cost);
   assert.deepEqual(updates,[300,297]);
