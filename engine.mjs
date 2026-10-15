@@ -1,8 +1,7 @@
 // Algorithm core: no rendering or browser dependencies. All costs are nonnegative.
 export const WALK_SPEED = 1.25;
-export const algorithms = ['dijkstra', 'bellman', 'astar'];
-export const names = { dijkstra: 'Dijkstra', bellman: 'Bellman–Ford', astar: 'A*' };
-const hypot = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+export const algorithms = ['dijkstra', 'bellman'];
+export const names = { dijkstra: 'Dijkstra', bellman: 'Bellman–Ford' };
 
 class Heap {
   items=[];
@@ -27,14 +26,6 @@ export function makeGraph(data, settings={}) {
     return edge;
   });
   return {nodes:data.nodes,edges,adj,objective:settings.objective||'distance'};
-}
-
-// h(v) for A*: straight-line distance to the target, divided by the maximum walking
-// speed in time mode. Other methods use h = 0. Shared with the replay inspector.
-export function heuristic(graph,target,method='astar') {
-  if(method!=='astar')return ()=>0;
-  const t=graph.nodes[target],speed=graph.objective==='time'?WALK_SPEED:1;
-  return v=>hypot(graph.nodes[v],t)/speed;
 }
 
 // record: false (no trace), true / 'compact' (selections, successful updates and pass
@@ -66,8 +57,7 @@ export function shortestPath(graph,source,target,method='dijkstra',record=true) 
     }
     expanded=touched.size;
   } else {
-    const h=heuristic(graph,target,method);
-    const heap=new Heap(),done=new Uint8Array(n);heap.push({node:source,priority:h(source),g:0});
+    const heap=new Heap(),done=new Uint8Array(n);heap.push({node:source,priority:0,g:0});
     while(heap.items.length) {
       const item=heap.pop(),u=item.node;
       if(done[u]||item.g>distance[u]+1e-9){stale++;if(full)event({type:'stale',node:u,g:item.g,priority:item.priority});else staleRun++;continue;}
@@ -77,7 +67,7 @@ export function shortestPath(graph,source,target,method='dijkstra',record=true) 
         checks++;const e=graph.edges[id],candidate=distance[u]+e.weight;
         if(candidate<distance[v]-1e-9) {
           distance[v]=candidate;previous[v]=u;previousEdge[v]=id;updates++;touched.add(v);
-          heap.push({node:v,priority:candidate+h(v),g:candidate});event({type:'relax',node:v,from:u,edge:id,cost:candidate});
+          heap.push({node:v,priority:candidate,g:candidate});event({type:'relax',node:v,from:u,edge:id,cost:candidate});
         } else miss({type:'check',node:v,from:u,edge:id});
       }
     }
@@ -116,7 +106,7 @@ export function planJourney(data,settings) {
   const cost=ids=>ids.slice(1).reduce((s,id,i)=>s+path(ids[i],id).cost,0);
   const mains=data.places.filter(p=>p.rank).sort((a,b)=>a.rank-b.rank).map(p=>p.id);
   const extras=[...new Set(settings.extras||[])].filter(id=>places[id]&&id!==settings.start);
-  let order;
+  let order,orderSearch=null;
   if(settings.mode==='all') {
     const required=[...new Set([...mains,...extras])].filter(id=>id!==settings.start);
     if(settings.order==='traditional') {
@@ -127,16 +117,19 @@ export function planJourney(data,settings) {
         order=best||[...order,id];
       }
     } else {
-      let best=Infinity;
-      for(const p of permutations(required)){const candidate=[settings.start,...p],c=cost(candidate);if(c<best){best=c;order=candidate;}}
+      // Every visiting order is costed from the pairwise shortest legs; the ranking is
+      // kept so the 3D lab can show why the winning tour beats the others.
+      let best=Infinity;const ranked=[];
+      for(const p of permutations(required)){const candidate=[settings.start,...p],c=cost(candidate);ranked.push({order:candidate,cost:c});if(c<best){best=c;order=candidate;}}
       order??=[settings.start,...required];
+      ranked.sort((a,b)=>a.cost-b.cost);orderSearch={evaluated:ranked.length,top:ranked.slice(0,5),worst:ranked.at(-1)||null};
     }
   } else {
     const extra=extras.filter(id=>id!==settings.destination);let best=Infinity;
     for(const p of permutations(extra)){const candidate=[settings.start,...p,settings.destination].filter((id,i,arr)=>!i||id!==arr[i-1]),c=cost(candidate);if(c<best){best=c;order=candidate;}}
     order??=[settings.start,settings.destination];
   }
-  const result={order,settings,comparisons:{},suggestions:[],graphSummary:{nodes:graph.nodes.length,edges:graph.edges.filter(e=>!e.closed).length}};
+  const result={order,orderSearch,settings,comparisons:{},suggestions:[],graphSummary:{nodes:graph.nodes.length,edges:graph.edges.filter(e=>!e.closed).length}};
   for(const method of algorithms) {
     const legs=order.slice(1).map((id,i)=>shortestPath(graph,places[order[i]].node,places[id].node,method,true));
     const reachable=legs.every(l=>l.reachable);
@@ -162,7 +155,7 @@ export function planJourney(data,settings) {
   // Alternatives hold the same accepted itinerary, so only the route objective differs.
   const distanceGraph=makeGraph(data,{...settings,objective:'distance'}),timeGraph=makeGraph(data,{...settings,objective:'time'});
   const alternative=g=>{
-    const legs=order.slice(1).map((id,i)=>shortestPath(g,places[order[i]].node,places[id].node,'astar',false));
+    const legs=order.slice(1).map((id,i)=>shortestPath(g,places[order[i]].node,places[id].node,'dijkstra',false));
     return {metres:legs.reduce((s,l)=>s+(l.metres||0),0),seconds:legs.reduce((s,l)=>s+(l.seconds||0),0),points:legs.flatMap((l,i)=>geometry(g,l).slice(i?1:0)),edgeIds:legs.flatMap(l=>l.edgeIds)};
   };
   result.distanceRoute=alternative(distanceGraph);result.timeRoute=alternative(timeGraph);

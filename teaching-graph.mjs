@@ -7,7 +7,7 @@ const positions={A:[0,150],B:[90,60],C:[100,230],D:[200,40],E:[210,150],F:[200,2
 const letters=Object.keys(positions);
 // Edge order matters for Bellman–Ford: lanes far from A are listed first, so the
 // fixed-order passes need several rounds before a pass changes nothing.
-// Each length is at least the straight-line distance, keeping the A* heuristic consistent.
+// Each length is at least the straight-line distance between its junctions.
 const lanes=[['G','K',135],['H','K',123],['D','G',118],['E','G',123],['E','H',131],['F','H',130],['B','D',112],['B','E',175],['C','E',137],['C','F',108],['I','F',153],['J','B',132],['A','B',130],['A','C',160],['A','J',118],['A','I',190],['A','E',300]];
 
 export const teachingData={

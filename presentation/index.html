@@ -1,0 +1,1033 @@
+<title>DarshanDisha Review Deck</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Project presentation for DarshanDisha, a Pune Ganpati shortest-path simulator built for Design & Analysis of Algorithms.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Hind:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a fixed 1280×720 stage, scaled to fit, between a slim header and a navigation dock.
+   Palette follows the DarshanDisha app: ivory paper, forest green, saffron, plus the app's two algorithm colours. */
+:root{
+  --bg:#ebe6da; --paper:#f8f5ee; --card:#fffdf8; --ink:#1d2e27; --muted:#687064; --line:#e0dacb;
+  --saffron:#ad4b21; --marigold:#d48f32; --band:#173e33; --on-band:#f3ecdc; --on-band-muted:#b8c6b5;
+  --dij:#4f7a62; --bf:#a5653b; --road:#d6cfbd; --road-major:#bdb39b; --seq-hi:#173e33;
+  --display:'Fraunces',Georgia,'Times New Roman',serif;
+  --body:'Hind','Nirmala UI','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#08130f; --paper:#10231d; --card:#163027; --ink:#ece6d6; --muted:#9ba895; --line:#284238;
+  --saffron:#e3804b; --marigold:#ebb563; --band:#0b1a16; --on-band:#f3ecdc; --on-band-muted:#a7b6a4;
+  --dij:#8dbb9f; --bf:#dc9f72; --road:#2a4339; --road-major:#3d5a4d; --seq-hi:#e9dfc6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#08130f; --paper:#10231d; --card:#163027; --ink:#ece6d6; --muted:#9ba895; --line:#284238;
+  --saffron:#e3804b; --marigold:#ebb563; --band:#0b1a16; --on-band:#f3ecdc; --on-band-muted:#a7b6a4;
+  --dij:#8dbb9f; --bf:#dc9f72; --road:#2a4339; --road-major:#3d5a4d; --seq-hi:#e9dfc6; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;overflow:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--marigold);outline-offset:2px}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto}
+
+/* header */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:10px;min-width:0}
+.brand{font-family:var(--display);font-size:19px;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand b{color:var(--saffron);font-weight:400}
+.brand small{font-family:var(--body);font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin-left:12px}
+.tools{display:flex;gap:6px;align-items:center}
+.tool{border:1px solid var(--line);background:var(--card);border-radius:8px;height:32px;min-width:32px;padding:0 10px;font-size:13px;color:var(--muted)}
+.tool:hover{color:var(--ink)}
+.tool[aria-pressed="true"]{color:var(--saffron);border-color:var(--saffron)}
+.counter{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;padding:0 6px}
+
+/* stage */
+.viewport{position:relative;min-height:0;display:grid;place-items:center}
+.frame{position:relative;overflow:hidden;border-radius:14px;box-shadow:0 18px 50px -24px rgba(10,30,24,.45),0 0 0 1px var(--line)}
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;background:var(--paper)}
+.slide{position:absolute;inset:0;padding:54px 72px 48px;display:flex;flex-direction:column;gap:22px;
+  opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s .5s}
+.slide.active{opacity:1;visibility:visible;transition:opacity .5s ease}
+.slide.band{background:var(--band);color:var(--on-band)}
+.eyebrow{font-size:12px;letter-spacing:2.4px;text-transform:uppercase;color:var(--saffron);font-weight:600;display:flex;align-items:center;gap:10px}
+.eyebrow:before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.band .eyebrow{color:var(--marigold)}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:-.6px}
+h2{font-size:46px;line-height:1.08;max-width:22ch}
+h2 em,h1 em{color:var(--saffron);font-style:italic}
+.band h2 em,.band h1 em{color:var(--marigold)}
+h3{font-size:24px;line-height:1.2}
+p{margin:0;line-height:1.55}
+.lede{font-size:19px;color:var(--muted);max-width:60ch}
+.band .lede{color:var(--on-band-muted)}
+.mr{font-family:'Hind','Nirmala UI',sans-serif}
+.mono{font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+.foot{margin-top:auto;font-size:12px;color:var(--muted);letter-spacing:.3px}
+.band .foot{color:var(--on-band-muted)}
+
+/* entrance choreography: elements rest visible; they replay a rise only when their slide is entered */
+.enter .rise{animation:rise .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 90ms + 120ms)}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* 1 title */
+.title-grid{display:grid;grid-template-columns:1fr 520px;gap:40px;height:100%;margin:-54px -72px -48px 0}
+.title-copy{display:flex;flex-direction:column;justify-content:center;gap:22px;padding-block:40px}
+.title-copy h1{font-size:92px;line-height:.95;letter-spacing:-2.5px}
+.title-copy h1 b{font-weight:400;color:var(--saffron)}
+.title-copy .tag{font-family:var(--display);font-style:italic;font-size:28px;color:var(--muted)}
+.title-meta{display:flex;gap:28px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:18px}
+.title-meta strong{display:block;color:var(--ink);font-weight:600;font-size:15px}
+.title-map{background:var(--band);position:relative;overflow:hidden}
+.title-map svg{position:absolute;inset:0;width:100%;height:100%}
+.map-caption{position:absolute;left:22px;bottom:18px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--on-band-muted)}
+.map-mr{position:absolute;right:22px;top:20px;font-size:22px;color:var(--marigold)}
+
+/* map svg */
+.roads path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.on-band .roads .minor{stroke:#2c5244}.on-band .roads .major{stroke:#3d6655}
+.on-light .roads .minor{stroke:var(--road)}.on-light .roads .major{stroke:var(--road-major)}
+.route{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.marker circle{stroke-width:4}
+.marker text{font-family:var(--display);font-size:26px;text-anchor:middle;dominant-baseline:central}
+.marker .lbl{font-family:var(--body);font-size:24px;text-anchor:start;font-weight:600}
+.pop{transform-box:fill-box;transform-origin:center}
+.enter .pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* 2 problem */
+.q-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:6px}
+.q{border-top:2px solid var(--line);padding-top:16px;display:grid;grid-template-columns:52px 1fr;gap:4px 16px}
+.q .k{grid-row:span 2;font-family:var(--display);font-size:40px;line-height:1;color:var(--saffron)}
+.q h3{font-size:24px}
+.q p{color:var(--muted);font-size:16px}
+
+/* 3 goals */
+.goals{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:8px}
+.goal{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:12px}
+.goal .who{font-size:12px;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.goal ul{margin:0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:15px}
+.stops-row{display:flex;gap:10px;margin-top:auto;flex-wrap:wrap}
+.stop-chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:30px;padding:6px 14px 6px 6px;font-size:14px;background:var(--card)}
+.stop-chip span{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--marigold);color:#1d2e27;font-family:var(--display)}
+.stop-chip i{font-style:normal;color:var(--muted);font-size:13px}
+
+/* 4 graph */
+.graph-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:26px 30px}
+.stat strong{display:block;font-family:var(--display);font-size:60px;line-height:1;letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
+.stat span{font-size:15px;color:var(--on-band-muted)}
+.formula{background:rgba(0,0,0,.22);border:1px solid rgba(243,236,220,.14);border-radius:14px;padding:24px 26px;font-family:var(--mono);font-size:15px;line-height:1.9;color:var(--on-band)}
+.formula .c{color:var(--on-band-muted)}
+.formula .h{color:var(--marigold)}
+.mode-row{display:flex;gap:14px;margin-top:16px}
+.mode{flex:1;border:1px solid rgba(243,236,220,.18);border-radius:12px;padding:14px 16px;font-size:15px;color:var(--on-band-muted)}
+.mode b{display:block;color:var(--on-band);font-weight:600;margin-bottom:2px}
+
+/* 5 algorithms */
+.algos{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.algo{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:24px;display:flex;flex-direction:column;gap:12px;border-top:5px solid var(--c)}
+.algo h3{font-size:30px;color:var(--c)}
+.algo .rule{font-family:var(--mono);font-size:14px;background:var(--paper);border-radius:8px;padding:10px 12px}
+.algo p{color:var(--muted);font-size:15px}
+.algo dl{margin:auto 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;border-top:1px solid var(--line);padding-top:14px}
+.algo dt{color:var(--muted)}.algo dd{margin:0;font-family:var(--mono);font-size:13px}
+.note{font-size:15px;color:var(--muted);border-left:3px solid var(--marigold);padding-left:14px;max-width:80ch}
+
+/* 6 live demo */
+.demo{display:grid;grid-template-columns:690px 1fr;gap:26px;min-height:0;flex:1}
+.demo-board{background:var(--card);border:1px solid var(--line);border-radius:14px;position:relative;overflow:hidden}
+.demo-board svg{width:100%;height:100%;display:block}
+.tg-edge{stroke:var(--road-major);stroke-width:3;transition:stroke .25s,stroke-width .25s}
+.tg-edge.check{stroke:var(--c);stroke-width:7}
+.tg-edge.tree{stroke:var(--c);stroke-width:3.5;stroke-opacity:.55}
+.tg-edge.path{stroke:var(--saffron);stroke-width:9;stroke-opacity:1}
+.tg-w{font-family:var(--mono);font-size:12px;fill:var(--muted);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--card);stroke-width:5px}
+.tg-node circle{fill:var(--paper);stroke:var(--road-major);stroke-width:2.5;transition:fill .25s,stroke .25s}
+.tg-node text{font-family:var(--display);font-size:17px;text-anchor:middle;dominant-baseline:central;fill:var(--ink)}
+.tg-node .g{font-family:var(--mono);font-size:12px;fill:var(--muted);paint-order:stroke;stroke:var(--card);stroke-width:5px}
+.tg-node.tent circle{stroke:var(--c);stroke-width:3.5;stroke-dasharray:4 3}
+.tg-node.tent .g,.tg-node.done .g{fill:var(--ink);font-weight:600}
+.tg-node.done circle{fill:var(--c);stroke:var(--c)}
+.tg-node.done .letter{fill:var(--card)}
+.tg-node.cur circle{stroke:var(--saffron);stroke-width:5;stroke-dasharray:none}
+.tg-node.endpt circle{stroke-width:4}
+.demo-side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--card)}
+.seg button{flex:1;border:0;background:none;border-radius:7px;padding:8px 6px;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--c);color:var(--card);font-weight:600}
+.event{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-height:112px;display:flex;flex-direction:column;gap:6px}
+.event .kind{font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:var(--c);font-weight:600}
+.event .msg{font-size:17px;line-height:1.4}
+.event .math{font-family:var(--mono);font-size:14px;color:var(--muted)}
+.ctrl{display:flex;gap:8px;align-items:center}
+.ctrl button{border:1px solid var(--line);background:var(--card);border-radius:9px;height:38px;padding:0 14px;font-size:14px}
+.ctrl button.primary{background:var(--c);border-color:var(--c);color:var(--card);font-weight:600;min-width:86px}
+.ctrl label{font-size:13px;color:var(--muted);margin-left:auto;display:flex;gap:8px;align-items:center}
+.ctrl input{accent-color:var(--saffron);width:90px}
+.scores{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.scores th{font-weight:500;color:var(--muted);text-align:right;font-size:12px;padding:4px 6px;border-bottom:1px solid var(--line)}
+.scores th:first-child,.scores td:first-child{text-align:left}
+.scores td{text-align:right;padding:6px;border-bottom:1px solid var(--line)}
+.scores tr.on td{font-weight:600}
+.scores .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid var(--muted)}
+
+/* 7 results */
+.results{display:grid;grid-template-columns:1fr 330px;gap:40px;flex:1;min-height:0}
+.chart{display:flex;flex-direction:column;gap:6px}
+.chart-title{font-size:14px;color:var(--muted);display:flex;justify-content:space-between}
+.bars{position:relative;margin-left:150px;margin-top:8px}
+.bar-row{display:flex;align-items:center;height:62px;position:relative}
+.bar-row .name{position:absolute;right:100%;margin-right:18px;font-family:var(--display);font-size:22px;white-space:nowrap}
+.bar{height:34px;border-radius:0 6px 6px 0;background:var(--c);width:var(--w);transform-origin:left;transition:transform 1.2s cubic-bezier(.2,.7,.2,1)}
+.enter .bar{animation:grow 1.3s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0)*150ms + 300ms)}
+@keyframes grow{from{transform:scaleX(0)}to{transform:none}}
+.bar-row b{margin-left:12px;font-family:var(--mono);font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.axis{position:relative;height:40px;border-top:1px solid var(--line);margin-top:6px}
+.axis span{position:absolute;top:6px;transform:translateX(-50%);font-family:var(--mono);font-size:12px;color:var(--muted)}
+.grid-line{position:absolute;top:0;bottom:40px;width:1px;background:var(--line)}
+.facts{display:flex;flex-direction:column;gap:14px}
+.fact{border-left:3px solid var(--c,var(--saffron));padding:4px 0 4px 16px}
+.fact strong{display:block;font-family:var(--display);font-size:36px;line-height:1.1;font-variant-numeric:tabular-nums}
+.fact span{font-size:14px;color:var(--muted)}
+
+/* 8 permutations */
+.perm{display:grid;grid-template-columns:760px 1fr;gap:34px;flex:1;min-height:0}
+.perm-board{position:relative;height:378px}
+.cell{position:absolute;width:47px;height:42px;border-radius:6px;font-family:var(--mono);font-size:10px;display:grid;place-items:center;
+  background:color-mix(in oklab,var(--seq-hi) var(--t),var(--card));color:var(--ink);border:1px solid var(--line);
+  transition:transform .9s cubic-bezier(.3,.8,.2,1),box-shadow .3s}
+.cell.dark{color:var(--card)}
+.cell.best{box-shadow:0 0 0 3px var(--saffron);z-index:2}
+.cell.trad{box-shadow:0 0 0 3px var(--marigold);z-index:2}
+.cell.scan{opacity:0}
+.cell.scan.seen{opacity:1;transition:opacity .2s,transform .9s cubic-bezier(.3,.8,.2,1)}
+.perm-side{display:flex;flex-direction:column;gap:16px}
+.ramp{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--card),var(--seq-hi));border:1px solid var(--line)}
+.ramp-l{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.order-row{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px;gap:10px}
+.order-row b{font-family:var(--display);font-size:30px;font-weight:400;font-variant-numeric:tabular-nums}
+.order-row span{font-size:14px;color:var(--muted)}
+.order-row .sw{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:8px;vertical-align:-1px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:9px 16px;font-size:14px}
+.btn.primary{background:var(--saffron);color:var(--card);border-color:var(--saffron);font-weight:600}
+
+/* 9 crowds */
+.crowd{display:grid;grid-template-columns:520px 1fr;gap:40px;margin:-54px 0 -48px -72px;height:calc(100% + 102px)}
+.crowd-map{background:var(--band);position:relative;overflow:hidden}
+.crowd-map svg{position:absolute;inset:0;width:100%;height:100%}
+.crowd-copy{display:flex;flex-direction:column;gap:18px;padding:54px 0 48px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.route-card{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:var(--card);display:flex;flex-direction:column;gap:6px;text-align:left;transition:border-color .2s,box-shadow .2s}
+.route-card[aria-pressed="true"]{border-color:var(--c);box-shadow:0 0 0 2px var(--c)}
+.route-card .k{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--c);font-weight:600;display:flex;align-items:center;gap:8px}
+.route-card .k:before{content:'';width:22px;height:0;border-top:4px var(--style,solid) var(--c)}
+.route-card strong{font-family:var(--display);font-size:44px;font-weight:400;line-height:1;font-variant-numeric:tabular-nums}
+.route-card span{font-size:15px;color:var(--muted)}
+.delta{font-size:18px;line-height:1.5}
+.delta b{color:var(--saffron);font-weight:600}
+
+/* 10 detour */
+.detour{display:grid;grid-template-columns:1fr 520px;gap:44px;align-items:center;flex:1}
+.eq{font-family:var(--mono);font-size:20px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;line-height:1.7}
+.eq .p{color:var(--saffron)}.eq .m{color:var(--muted)}
+.rules{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:110px 1fr;gap:16px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px}
+.rules b{font-family:var(--display);font-size:28px;font-weight:400}
+.rules span{color:var(--muted);font-size:15px}
+.tri text{font-family:var(--display);font-size:20px;text-anchor:middle;dominant-baseline:central}
+.tri .lab{font-family:var(--body);font-size:15px;fill:var(--muted)}
+.tri .dash{stroke-dasharray:10 9;animation:march 1.2s linear infinite}
+@keyframes march{to{stroke-dashoffset:-19}}
+
+/* 11 architecture */
+.arch{flex:1;min-height:0;position:relative}
+.arch svg{width:100%;height:100%;overflow:visible}
+.box rect{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.box.hot rect{stroke:var(--saffron);stroke-width:2.5}
+.box .t{font-family:var(--display);font-size:20px;fill:var(--ink)}
+.box .s{font-family:var(--mono);font-size:12.5px;fill:var(--muted)}
+.wire{fill:none;stroke:var(--road-major);stroke-width:2}
+.packet{fill:var(--saffron)}
+
+/* 12 product */
+.product{display:grid;grid-template-columns:1fr 300px;gap:30px;flex:1;min-height:0}
+.shots{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--card)}
+.shots img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;opacity:0;transition:opacity .8s ease;max-width:100%}
+.shots img.fit{object-fit:contain;object-position:center;background:#f6f2e8}
+.shots img.on{opacity:1;animation:drift 9s ease-out both}
+@keyframes drift{from{transform:scale(1.06)}to{transform:scale(1)}}
+.shot-tabs{display:flex;flex-direction:column;gap:8px}
+.shot-tab{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:14px 16px;text-align:left;display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden}
+.shot-tab b{font-weight:600;font-size:16px}
+.shot-tab span{font-size:13.5px;color:var(--muted);line-height:1.4}
+.shot-tab[aria-pressed="true"]{border-color:var(--saffron)}
+.shot-tab[aria-pressed="true"]:after{content:'';position:absolute;left:0;bottom:0;height:3px;background:var(--saffron);animation:timer 5s linear both}
+@keyframes timer{from{width:0}to{width:100%}}
+
+/* 13 tests */
+.tests{display:grid;grid-template-columns:1fr 360px;gap:36px;flex:1;min-height:0}
+.term{background:#0f1f1a;color:#d9e4d2;border-radius:14px;padding:18px 22px;font-family:var(--mono);font-size:12.5px;line-height:1.62;overflow:hidden;border:1px solid var(--line)}
+.term .ok{color:#8fd19e}.term .dim{color:#7f9488}.term .pr{color:#ebb563}
+.term .ln{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term .cursor{display:inline-block;width:8px;height:15px;background:#ebb563;vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.checks li{display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:15px;line-height:1.45}
+.checks li:before{content:'✓';width:22px;height:22px;border-radius:50%;background:var(--dij);color:var(--card);display:grid;place-items:center;font-size:13px;font-weight:600}
+
+/* 14 limits */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.list li{border-top:1px solid var(--line);padding-top:12px;font-size:16px;line-height:1.5;color:var(--muted)}
+.list li b{color:var(--ink);font-weight:600;display:block;font-size:17px}
+.band .list li{border-color:rgba(243,236,220,.16);color:var(--on-band-muted)}
+.band .list li b{color:var(--on-band)}
+
+/* 15 thanks */
+.thanks{flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px;position:relative}
+.thanks h1{font-size:110px;line-height:.95;letter-spacing:-3px}
+.thanks .mr{font-size:40px;color:var(--marigold)}
+.thanks .run{display:flex;gap:14px;flex-wrap:wrap}
+.thanks code{font-family:var(--mono);font-size:15px;background:rgba(0,0,0,.25);border:1px solid rgba(243,236,220,.16);padding:8px 14px;border-radius:8px}
+.petals{position:absolute;inset:-54px -72px -48px;pointer-events:none;overflow:hidden}
+.petal{position:absolute;top:-30px;width:14px;height:20px;border-radius:70% 0 70% 0;background:var(--marigold);opacity:.85;animation:fall linear infinite}
+@keyframes fall{to{transform:translate(var(--dx),780px) rotate(540deg)}}
+
+/* presenter notes */
+.notes{position:absolute;left:0;right:0;bottom:0;background:var(--ink);color:var(--paper);font-size:16px;line-height:1.5;padding:14px 72px;z-index:20;transform:translateY(100%);transition:transform .3s}
+.show-notes .notes{transform:none}
+.notes b{color:var(--marigold);font-weight:600;margin-right:8px;font-size:12px;letter-spacing:1.6px;text-transform:uppercase}
+
+/* dock */
+.dock{display:flex;align-items:center;gap:12px;padding-block:10px 12px;padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}
+.nav{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:18px;flex-shrink:0}
+.nav:disabled{opacity:.35;cursor:default}
+.progress{flex:1;display:flex;gap:4px;min-width:0}
+.progress button{flex:1;height:22px;border:0;background:none;padding:9px 0;min-width:0}
+.progress button i{display:block;height:4px;border-radius:2px;background:var(--line);transition:background .3s}
+.progress button.done i{background:color-mix(in oklab,var(--saffron) 45%,var(--line))}
+.progress button.current i{background:var(--saffron)}
+.hint{font-size:12px;color:var(--muted);white-space:nowrap}
+@media (max-width:720px){.hint,.brand small{display:none}.slide-title-tip{display:none}}
+
+@media (prefers-reduced-motion:reduce){
+  .enter .rise,.enter .pop,.enter .bar,.shots img.on,.tri .dash,.petal{animation:none!important}
+  .slide,.cell,.notes{transition:none!important}
+}
+</style>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">Darshan<b>Disha</b><small>Project review · Design &amp; Analysis of Algorithms</small></div>
+    <div class="tools">
+      <span class="counter" id="counter">01 / 15</span>
+      <button class="tool" id="notesBtn" aria-pressed="false" title="Speaker notes (N)">Notes</button>
+      <button class="tool" id="themeBtn" title="Switch light and dark">◐</button>
+      <button class="tool" id="fsBtn" title="Fullscreen (F)">⛶</button>
+    </div>
+  </header>
+
+  <main class="viewport" id="viewport">
+    <div class="frame" id="frame">
+      <div class="stage" id="stage">
+
+        <!-- 1 · Title -->
+        <section class="slide" data-id="title">
+          <div class="title-grid">
+            <div class="title-copy">
+              <div class="eyebrow rise">Manache Paach &amp; beyond · Pune</div>
+              <h1 class="rise">Darshan<b>Disha</b></h1>
+              <p class="tag rise">Finding the shortest way to Bappa.</p>
+              <p class="lede rise">An offline simulator that plans a walk through Pune's five honoured Ganpati mandals and shows how Dijkstra and Bellman–Ford each find the shortest route.</p>
+              <div class="title-meta rise">
+                <div><strong>Course</strong>Design &amp; Analysis of Algorithms</div>
+                <div><strong>Team</strong>Soham · Aryan</div>
+                <div><strong>Stack</strong>JavaScript · Canvas · Three.js</div>
+              </div>
+            </div>
+            <div class="title-map on-band">
+              <svg id="titleMap" aria-label="Pune street map with the five-mandal route drawn on it" role="img"></svg>
+              <div class="map-mr mr">मानाचे पाच गणपती</div>
+              <div class="map-caption">Real OSM streets · 2.19 km Manache Paach walk</div>
+            </div>
+          </div>
+          <aside class="notes"><b>Say</b>Introduce the project in one line: Pune's Ganpati tradition meets shortest-path algorithms. The route drawing on the right is the real computed walk from Shaniwar Wada.</aside>
+        </section>
+
+        <!-- 2 · Problem -->
+        <section class="slide" data-id="problem">
+          <div class="eyebrow rise">The problem</div>
+          <h2 class="rise">Ganeshotsav crowds turn a short walk into <em>a hard choice.</em></h2>
+          <p class="lede rise">Every year, lakhs of visitors walk the narrow lanes of Kasba, Budhwar and Narayan Peth to see the five Manache Ganpati. A visitor standing at Shaniwar Wada has to answer four questions.</p>
+          <div class="q-grid">
+            <div class="q rise"><span class="k">?</span><h3>Where am I going?</h3><p>Five required stops, plus famous mandals such as Dagdusheth nearby.</p></div>
+            <div class="q rise"><span class="k">→</span><h3>Which route should I take?</h3><p>There are 120 possible visiting orders and hundreds of lanes between them.</p></div>
+            <div class="q rise"><span class="k">∴</span><h3>Why this route?</h3><p>The answer must be explainable, not just a line on a map.</p></div>
+            <div class="q rise"><span class="k">≈</span><h3>What if a lane is crowded?</h3><p>The shortest walk in metres is not always the quickest when lanes are packed.</p></div>
+          </div>
+          <aside class="notes"><b>Say</b>These four visitor questions drove every design decision. The academic question sits on top: how do two different algorithms reach the same optimum?</aside>
+        </section>
+
+        <!-- 3 · Goals -->
+        <section class="slide" data-id="goals">
+          <div class="eyebrow rise">What we built</div>
+          <h2 class="rise">One app, two audiences.</h2>
+          <div class="goals">
+            <div class="goal rise"><span class="who">For the visitor</span><h3>Darshan Journey</h3>
+              <ul><li>Visit all five, in optimal or traditional order</li><li>Shortest walk or quickest in crowds</li><li>Close a lane and watch it re-route</li><li>Animated walk and printable walking guide</li></ul></div>
+            <div class="goal rise"><span class="who">For the student</span><h3>Algorithm Lab</h3>
+              <ul><li>Dijkstra and Bellman–Ford on the same graph</li><li>Step-by-step trace replay with pseudocode</li><li>3D tabletop model with cost pillars</li><li>Real operation counts, not animation time</li></ul></div>
+            <div class="goal rise"><span class="who">For honesty</span><h3>A truthful simulation</h3>
+              <ul><li>Real OpenStreetMap street geometry</li><li>Crowds and closures clearly labelled simulated</li><li>Queue time shown as unavailable, never invented</li><li>Runs fully offline, no API keys</li></ul></div>
+          </div>
+          <div class="stops-row rise">
+            <div class="stop-chip"><span>1</span>Kasba Ganpati <i class="mr">कसबा</i></div>
+            <div class="stop-chip"><span>2</span>Tambdi Jogeshwari <i class="mr">तांबडी जोगेश्वरी</i></div>
+            <div class="stop-chip"><span>3</span>Guruji Talim <i class="mr">गुरुजी तालीम</i></div>
+            <div class="stop-chip"><span>4</span>Tulshibaug <i class="mr">तुळशीबाग</i></div>
+            <div class="stop-chip"><span>5</span>Kesariwada <i class="mr">केसरीवाडा</i></div>
+          </div>
+          <aside class="notes"><b>Say</b>The five chips are the Manache Paach in ceremonial order. The app keeps them central; Dagdusheth, Babu Genu, Rangari, Akhil Mandai and Jilbya Maruti are optional discoveries.</aside>
+        </section>
+
+        <!-- 4 · Graph model -->
+        <section class="slide band" data-id="graph">
+          <div class="eyebrow rise">Modelling Pune</div>
+          <h2 class="rise">The old city, as a <em>weighted graph.</em></h2>
+          <div class="graph-grid">
+            <div class="stats">
+              <div class="stat rise"><strong data-count="1167">1,167</strong><span>junctions (vertices V)</span></div>
+              <div class="stat rise"><strong data-count="1570">1,570</strong><span>walkable lane segments (edges E)</span></div>
+              <div class="stat rise"><strong data-count="4962">4,962</strong><span>building footprints drawn</span></div>
+              <div class="stat rise"><strong data-count="12">12</strong><span>places: 2 start points, 10 mandals</span></div>
+            </div>
+            <div>
+              <div class="formula rise">
+                <span class="c">// distance mode</span><br>
+                w(e) = <span class="h">polyline length in metres</span><br>
+                <span class="c">// time mode (simulated crowds)</span><br>
+                base&nbsp;&nbsp;= length / <span class="h">1.25 m/s</span><br>
+                crowd = 1 + f × (0.2 + 4·hotspot + corridor)<br>
+                w(e)&nbsp;&nbsp;= base × crowd&nbsp;&nbsp;<span class="c">// always ≥ base</span>
+              </div>
+              <div class="mode-row rise">
+                <div class="mode"><b>Undirected, non-negative</b>Every open lane works both ways. No negative weights.</div>
+                <div class="mode"><b>Closures</b>A closed lane is removed from the graph snapshot.</div>
+              </div>
+            </div>
+          </div>
+          <p class="foot rise">Extracted from OpenStreetMap (bbox 18.508–18.524 N, 73.846–73.864 E). Access=no, private and foot=no ways are filtered out.</p>
+          <aside class="notes"><b>Say</b>Because crowd multipliers are always at least one, edge weights never go negative, so Dijkstra's greedy choice stays correct and both algorithms return the same minimum.</aside>
+        </section>
+
+        <!-- 5 · Algorithms -->
+        <section class="slide" data-id="algos">
+          <div class="eyebrow rise">Two algorithms, one graph</div>
+          <h2 class="rise">Same answer. <em>Different searches.</em></h2>
+          <div class="algos">
+            <div class="algo rise" style="--c:var(--dij)"><h3>Dijkstra</h3><div class="rule">pick u with smallest g(u)</div>
+              <p>Greedy. Settles the nearest tentative junction first. With non-negative weights, a settled cost is final.</p>
+              <dl><dt>Time</dt><dd>O((V + E) log V)</dd><dt>Structure</dt><dd>binary min-heap</dd><dt>Stops</dt><dd>when target is settled</dd></dl></div>
+            <div class="algo rise" style="--c:var(--bf)"><h3>Bellman–Ford</h3><div class="rule">relax every edge, repeat</div>
+              <p>Relaxes all edges in passes until a full pass changes nothing. Never declares a node final early.</p>
+              <dl><dt>Time</dt><dd>O(V · E)</dd><dt>Structure</dt><dd>edge list</dd><dt>Stops</dt><dd>pass with no updates</dd></dl></div>
+          </div>
+          <p class="note rise">The path algorithms solve one leg at a time. Choosing the order of the five stops is a separate exact search over all 5! = 120 orders.</p>
+          <aside class="notes"><b>Say</b>Edge relaxation is the shared core: if g(u) + w(u,v) &lt; g(v), update g(v). The two algorithms only differ in which edge they relax next, and that decides how much work each one does.</aside>
+        </section>
+
+        <!-- 6 · Live demo -->
+        <section class="slide" data-id="demo" style="--c:var(--dij)">
+          <div class="eyebrow rise">Live · teaching graph, A to K</div>
+          <h2 class="rise" style="font-size:38px;max-width:none">Watch every edge check happen.</h2>
+          <div class="demo">
+            <div class="demo-board rise"><svg id="tg" viewBox="-90 0 560 380" role="img" aria-label="Teaching graph with eleven junctions A to K"></svg></div>
+            <div class="demo-side rise">
+              <div class="seg" id="algoSeg">
+                <button data-alg="dijkstra" aria-pressed="true">Dijkstra</button>
+                <button data-alg="bellman" aria-pressed="false">Bellman–Ford</button>
+              </div>
+              <div class="event" aria-live="polite"><span class="kind" id="evKind">Ready</span><span class="msg" id="evMsg">Press Play, or Step to go one edge check at a time.</span><span class="math" id="evMath">g(A) = 0, every other g = ∞</span></div>
+              <div class="ctrl">
+                <button class="primary" id="tgPlay">▶ Play</button>
+                <button id="tgStep">Step</button>
+                <button id="tgReset">Reset</button>
+                <label for="tgSpeed">Speed <input type="range" id="tgSpeed" min="1" max="12" value="4"></label>
+              </div>
+              <table class="scores" id="scores"><thead><tr><th>Algorithm</th><th>Selected</th><th>Edge checks</th><th>Updates</th><th>Cost</th></tr></thead><tbody></tbody></table>
+              <div class="legend"><span><i style="border-style:dashed"></i>tentative g</span><span><i style="background:var(--c);border-color:var(--c)"></i>settled</span><span><i style="border-color:var(--saffron);border-width:3px"></i>current</span><span><i style="border-radius:2px;height:5px;background:var(--saffron);border:0"></i>shortest path</span></div>
+            </div>
+          </div>
+          <aside class="notes"><b>Say</b>Run Dijkstra first: it settles each node once and finds 495 m with 17 edge checks. Then run Bellman–Ford: the same 495 m, but 170 edge checks over five passes, and the last pass changes nothing.</aside>
+        </section>
+
+        <!-- 7 · Results -->
+        <section class="slide" data-id="results">
+          <div class="eyebrow rise">Results on the real walk</div>
+          <h2 class="rise">Both agree on <em>2,192 m.</em> The work differs by 210×.</h2>
+          <div class="results">
+            <div class="chart rise">
+              <div class="chart-title"><span>Edge checks to plan the full five-stop journey from Shaniwar Wada</span><span>log scale</span></div>
+              <div class="bars" id="bars">
+                <div class="bar-row" style="--c:var(--dij)"><span class="name">Dijkstra</span><div class="bar" data-v="1806" style="--i:0"></div><b>1,806</b></div>
+                <div class="bar-row" style="--c:var(--bf)"><span class="name">Bellman–Ford</span><div class="bar" data-v="379940" style="--i:1"></div><b>379,940</b></div>
+                <div class="axis" id="axis"></div>
+              </div>
+            </div>
+            <div class="facts">
+              <div class="fact rise" style="--c:var(--dij)"><strong>654</strong><span>junctions Dijkstra selected, each settled exactly once</span></div>
+              <div class="fact rise" style="--c:var(--bf)"><strong>121 passes</strong><span>Bellman–Ford needed across the 5 legs, reaching 5,835 nodes</span></div>
+              <div class="fact rise" style="--c:var(--bf)"><strong>210×</strong><span>more edge checks for Bellman–Ford, for the same optimum</span></div>
+              <div class="fact rise"><strong>2.19 km · 29 min</strong><span>walk at a 15% (quiet morning) simulated crowd</span></div>
+            </div>
+          </div>
+          <p class="foot rise">Counts are summed over the five legs and produced by engine.mjs. Compute time depends on the device, so the deck compares operation counts.</p>
+          <aside class="notes"><b>Say</b>Use edge checks as the fair shared metric. Bellman–Ford's count is about 210 times Dijkstra's, which matches its O(VE) bound against O((V+E) log V). On this laptop the app measured about 1.5 ms against 102 ms, but timings vary by device.</aside>
+        </section>
+
+        <!-- 8 · Permutations -->
+        <section class="slide" data-id="perm">
+          <div class="eyebrow rise">Choosing the visiting order</div>
+          <h2 class="rise" style="max-width:none">5! = 120 orders. We check <em>every one.</em></h2>
+          <div class="perm">
+            <div class="perm-board rise" id="permBoard" aria-label="All 120 visiting orders, shaded by total walking distance"></div>
+            <div class="perm-side rise">
+              <div><div class="ramp"></div><div class="ramp-l"><span>2,192 m</span><span>4,311 m</span></div></div>
+              <div class="order-row"><div><span class="sw" style="background:var(--saffron)"></span><span>Optimal · 1 → 2 → 4 → 3 → 5</span></div><b>2,192 m</b></div>
+              <div class="order-row"><div><span class="sw" style="background:var(--marigold)"></span><span>Traditional · 1 → 2 → 3 → 4 → 5</span></div><b>2,271 m</b></div>
+              <div class="order-row"><div><span class="sw" style="background:var(--seq-hi)"></span><span>Worst · 3 → 1 → 4 → 5 → 2</span></div><b>4,311 m</b></div>
+              <p style="color:var(--muted);font-size:15px">Pairwise leg costs are cached, so 120 orders need only 30 shortest-path calls. Swapping Tulshibaug and Guruji Talim saves 79 m over the ceremonial order.</p>
+              <div style="display:flex;gap:10px"><button class="btn primary" id="sortBtn">Sort by distance</button><button class="btn" id="scanBtn">Replay search</button></div>
+            </div>
+          </div>
+          <aside class="notes"><b>Say</b>Each cell is one order; digits are the mandal ranks. Press Sort to line them up by walking distance. Brute force is exact and cheap here because n = 5.</aside>
+        </section>
+
+        <!-- 9 · Crowds -->
+        <section class="slide" data-id="crowd">
+          <div class="crowd">
+            <div class="crowd-map on-band"><svg id="crowdMap" role="img" aria-label="Map comparing the shortest route and the quickest route at festival peak"></svg>
+              <div class="map-caption">Festival peak · 85% simulated crowd</div></div>
+            <div class="crowd-copy">
+              <div class="eyebrow rise">Crowds change the answer</div>
+              <h2 class="rise" style="font-size:42px">At festival peak, the longer walk <em>is quicker.</em></h2>
+              <div class="vs rise">
+                <button class="route-card" id="rcDist" style="--c:var(--marigold)" aria-pressed="true"><span class="k">Shortest walk</span><strong>83 min</strong><span>2.19 km through the crowded core</span></button>
+                <button class="route-card" id="rcTime" style="--c:#5fb3a3;--style:dashed" aria-pressed="true"><span class="k">Quickest in crowds</span><strong>66 min</strong><span>2.82 km, avoiding slow lanes</span></button>
+              </div>
+              <p class="delta rise">Walking <b>629 m more</b> saves <b>17 simulated minutes</b>. The order changes too: Kesariwada moves up to second.</p>
+              <p class="lede rise" style="font-size:16px">Both algorithms still agree on the minimum, now measured in seconds. Crowd multipliers are at least 1, so every weight stays non-negative and Dijkstra remains exact.</p>
+              <p class="foot rise">Click a card to redraw that route. Crowd values are teaching assumptions, not live data.</p>
+            </div>
+          </div>
+          <aside class="notes"><b>Say</b>Both routes are real outputs of the engine at an 85% crowd setting. This is the moment where the choice of objective visibly matters.</aside>
+        </section>
+
+        <!-- 10 · Detour -->
+        <section class="slide" data-id="detour">
+          <div class="eyebrow rise">A Bappa along the way?</div>
+          <h2 class="rise">“On the way” is measured on the graph, <em>not by eye.</em></h2>
+          <div class="detour">
+            <div style="display:flex;flex-direction:column;gap:22px">
+              <div class="eq rise"><span class="m">extra(G) =</span> <span class="p">cost(S, G)</span> + <span class="p">cost(G, T)</span><br><span class="m">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;−</span> cost(S, T)</div>
+              <ul class="rules">
+                <li class="rise"><b>≤ 400 m</b><span>extra walking for a stop to be suggested</span></li>
+                <li class="rise"><b>≤ 8 min</b><span>extra estimated walking time</span></li>
+                <li class="rise"><b>2 max</b><span>suggestions shown, and the visitor chooses Add or Skip</span></li>
+              </ul>
+            </div>
+            <svg class="tri rise" viewBox="0 0 520 360" role="img" aria-label="Detour triangle from start S through optional G to target T">
+              <path d="M70 280 C 190 300, 330 300, 450 270" fill="none" stroke="var(--muted)" stroke-width="4"/>
+              <path class="dash" d="M70 280 C 120 160, 200 90, 260 80 C 330 80, 410 160, 450 270" fill="none" stroke="var(--saffron)" stroke-width="4"/>
+              <text class="lab" x="260" y="318">cost(S, T)</text>
+              <text class="lab" x="150" y="130">cost(S, G)</text>
+              <text class="lab" x="390" y="130">cost(G, T)</text>
+              <g><circle cx="70" cy="280" r="24" fill="var(--band)"/><text x="70" y="280" fill="var(--on-band)">S</text></g>
+              <g><circle cx="450" cy="270" r="24" fill="var(--saffron)"/><text x="450" y="270" fill="var(--card)">T</text></g>
+              <g><circle cx="260" cy="80" r="24" fill="var(--marigold)"/><text x="260" y="80" fill="#1d2e27">G</text></g>
+            </svg>
+          </div>
+          <aside class="notes"><b>Say</b>A temple 50 m away in a straight line can be 400 m away on foot. For a full itinerary we try G in every leg and keep the cheapest insertion.</aside>
+        </section>
+
+        <!-- 11 · Architecture -->
+        <section class="slide" data-id="arch">
+          <div class="eyebrow rise">How it is built</div>
+          <h2 class="rise" style="max-width:none">From OpenStreetMap to a <em>replayable trace.</em></h2>
+          <div class="arch rise">
+            <svg viewBox="0 0 1136 470" id="archSvg" role="img" aria-label="Architecture pipeline">
+              <path id="w1" class="wire" d="M232 92 H292"/>
+              <path id="w2" class="wire" d="M524 92 H584"/>
+              <path id="w3" class="wire" d="M700 142 V196"/>
+              <path id="w4" class="wire" d="M700 286 C700 330 400 320 400 364"/>
+              <path id="w5" class="wire" d="M700 286 V364"/>
+              <path id="w6" class="wire" d="M700 286 C700 330 1000 320 1000 364"/>
+              <g class="box"><rect x="0" y="42" width="232" height="100" rx="12"/><text class="t" x="20" y="82">OpenStreetMap</text><text class="s" x="20" y="110">osm-source.xml · 7.6 MB</text></g>
+              <g class="box"><rect x="292" y="42" width="232" height="100" rx="12"/><text class="t" x="312" y="82">build_map.py</text><text class="s" x="312" y="110">→ map.json · V 1,167 · E 1,570</text></g>
+              <g class="box hot"><rect x="584" y="42" width="552" height="100" rx="12"/><text class="t" x="604" y="82">engine.mjs, inside a Web Worker</text><text class="s" x="604" y="110">Dijkstra · Bellman–Ford · 120-order search · detours</text></g>
+              <g class="box"><rect x="560" y="196" width="280" height="90" rx="12"/><text class="t" x="580" y="234">Trace events</text><text class="s" x="580" y="260">select · relax · update · finish</text></g>
+              <g class="box"><rect x="250" y="364" width="300" height="96" rx="12"/><text class="t" x="270" y="402">Canvas 2D map</text><text class="s" x="270" y="428">cached basemap, incremental paint</text></g>
+              <g class="box"><rect x="580" y="364" width="240" height="96" rx="12"/><text class="t" x="600" y="402">trace-player.mjs</text><text class="s" x="600" y="428">step, scrub, checkpoints</text></g>
+              <g class="box"><rect x="850" y="364" width="286" height="96" rx="12"/><text class="t" x="870" y="402">3D lab · Three.js</text><text class="s" x="870" y="428">lazy-loaded, vendored locally</text></g>
+              <g id="packets"></g>
+            </svg>
+          </div>
+          <p class="foot rise">HTML, CSS and vanilla ES modules. Zero npm runtime dependencies. Works offline from a local Node server or as a static Vercel build.</p>
+          <aside class="notes"><b>Say</b>The key design choice: the engine records events once, and every view replays those events. Nothing is animated that the algorithm did not actually do.</aside>
+        </section>
+
+        <!-- 12 · Product -->
+        <section class="slide" data-id="product">
+          <div class="eyebrow rise">The product</div>
+          <h2 class="rise" style="max-width:none">What the visitor and the student see.</h2>
+          <div class="product">
+            <div class="shots rise" id="shots">
+              <img src="assets/journey.jpg" alt="Journey planner with the Pune map and route" class="on">
+              <img src="assets/compare.jpg" alt="Dijkstra and Bellman–Ford compared on the same journey" class="fit">
+              <img src="assets/guided-lab.jpg" alt="3D Algorithm Lab guided teaching example">
+            </div>
+            <div class="shot-tabs rise" id="shotTabs">
+              <button class="shot-tab" aria-pressed="true" data-i="0"><b>Journey planner</b><span>Pick start, order, objective and crowd level. Add a nearby Ganpati.</span></button>
+              <button class="shot-tab" aria-pressed="false" data-i="1"><b>Algorithm comparison</b><span>Dijkstra and Bellman–Ford side by side with real counts and compute time.</span></button>
+              <button class="shot-tab" aria-pressed="false" data-i="2"><b>3D Algorithm Lab</b><span>The 11-node teaching graph on a tabletop, explained one edge check at a time.</span></button>
+            </div>
+          </div>
+          <aside class="notes"><b>Say</b>If time allows, switch to the running app here (npm start, then localhost:5173) for a live walk-through.</aside>
+        </section>
+
+        <!-- 13 · Verification -->
+        <section class="slide" data-id="tests">
+          <div class="eyebrow rise">Verification</div>
+          <h2 class="rise" style="max-width:none">24 automated tests. <em>24 passing.</em></h2>
+          <div class="tests">
+            <div class="term rise" id="term" aria-label="npm test output"></div>
+            <ul class="checks">
+              <li class="rise">An independent Floyd–Warshall oracle agrees with both algorithms.</li>
+              <li class="rise">At festival peak, the quickest route is longer but saves over a minute.</li>
+              <li class="rise">The chosen order is the minimum of all 120 orders.</li>
+              <li class="rise">Closed lanes never appear in a route; isolated targets report no path.</li>
+              <li class="rise">Replaying a trace backward or by scrubbing rebuilds the exact state.</li>
+            </ul>
+          </div>
+          <aside class="notes"><b>Say</b>The tests check correctness against an independent oracle, not against our own code. Browser checks at 1440, 390 and 320 px are recorded in VALIDATION.md.</aside>
+        </section>
+
+        <!-- 14 · Limits -->
+        <section class="slide band" data-id="limits">
+          <div class="eyebrow rise">Scope and next steps</div>
+          <h2 class="rise">What we claim, and <em>what comes next.</em></h2>
+          <div class="two">
+            <ul class="list">
+              <li class="rise"><b>Simulated crowds</b>No live crowd or queue feed. Presets are labelled as teaching scenarios.</li>
+              <li class="rise"><b>Representative entrances</b>Pins mark street approaches, not verified festival gates.</li>
+              <li class="rise"><b>Non-negative weights only</b>Bellman–Ford here does not demonstrate negative cycles.</li>
+            </ul>
+            <ul class="list">
+              <li class="rise"><b>Arrival-time queue model</b>Let expected darshan queues influence the stop order.</li>
+              <li class="rise"><b>Field-verified data</b>Survey festival entrances and one-way pandal routes on site.</li>
+              <li class="rise"><b>More algorithms</b>Bidirectional Dijkstra and contraction hierarchies for larger maps.</li>
+            </ul>
+          </div>
+          <aside class="notes"><b>Say</b>Being clear about limits is part of the design: the app never invents a queue time or claims live tracking.</aside>
+        </section>
+
+        <!-- 15 · Thanks -->
+        <section class="slide band" data-id="thanks">
+          <div class="thanks">
+            <div class="petals" id="petals" aria-hidden="true"></div>
+            <div class="mr rise">गणपती बाप्पा मोरया</div>
+            <h1 class="rise">Thank you.<br><em>Questions?</em></h1>
+            <div class="run rise"><code>npm start → localhost:5173</code><code>npm test → 24 / 24</code></div>
+          </div>
+          <p class="foot rise">Map data © OpenStreetMap contributors, ODbL 1.0. Interface and illustrations are original.</p>
+          <aside class="notes"><b>Say</b>Thank the mentor and offer the live demo.</aside>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <nav class="dock" aria-label="Slides">
+    <button class="nav" id="prev" aria-label="Previous slide">‹</button>
+    <div class="progress" id="progress"></div>
+    <button class="nav" id="next" aria-label="Next slide">›</button>
+    <span class="hint">← → to move · F fullscreen · N notes</span>
+  </nav>
+</div>
+
+<script src="deck-data.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const el = (tag, attrs = {}, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+const D = window.DECK_DATA;
+
+/* ---------- deck navigation ---------- */
+const slides = [...document.querySelectorAll('.slide')];
+const stage = $('stage'), frame = $('frame'), viewport = $('viewport');
+slides.forEach(s => s.querySelectorAll('.rise').forEach((n, i) => n.style.setProperty('--i', i)));
+let cur = 0;
+const prog = $('progress');
+slides.forEach((s, i) => { const b = document.createElement('button'); b.setAttribute('aria-label', 'Go to slide ' + (i + 1)); b.innerHTML = '<i></i>'; b.onclick = () => go(i); prog.appendChild(b); });
+
+function fit() {
+  const r = viewport.getBoundingClientRect();
+  const s = Math.min(r.width / 1280, r.height / 720);
+  frame.style.width = 1280 * s + 'px'; frame.style.height = 720 * s + 'px';
+  stage.style.transform = `scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+const hooks = {};
+function go(i) {
+  i = Math.max(0, Math.min(slides.length - 1, i));
+  const prev = slides[cur];
+  prev.classList.remove('active', 'enter');
+  hooks[prev.dataset.id]?.leave?.();
+  cur = i;
+  const s = slides[cur];
+  s.classList.add('active');
+  void s.offsetWidth;
+  s.classList.add('enter');
+  hooks[s.dataset.id]?.enter?.();
+  $('counter').textContent = String(cur + 1).padStart(2, '0') + ' / ' + slides.length;
+  [...prog.children].forEach((b, j) => { b.className = j < cur ? 'done' : j === cur ? 'current' : ''; });
+  $('prev').disabled = cur === 0; $('next').disabled = cur === slides.length - 1;
+  try { history.replaceState(null, '', '#s' + (cur + 1)); } catch (e) {}
+}
+$('prev').onclick = () => go(cur - 1);
+$('next').onclick = () => go(cur + 1);
+addEventListener('keydown', e => {
+  if (e.target.matches('input')) return;
+  if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+  else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+  else if (e.key === 'Home') go(0);
+  else if (e.key === 'End') go(slides.length - 1);
+  else if (e.key === 'f' || e.key === 'F') toggleFs();
+  else if (e.key === 'n' || e.key === 'N') toggleNotes();
+});
+let tx = null;
+viewport.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+viewport.addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) go(cur + (dx < 0 ? 1 : -1)); tx = null; });
+
+function toggleFs() { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.().catch(() => {}); }
+function toggleNotes() { const on = stage.classList.toggle('show-notes'); $('notesBtn').setAttribute('aria-pressed', on); }
+$('fsBtn').onclick = toggleFs;
+$('notesBtn').onclick = toggleNotes;
+$('themeBtn').onclick = () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+};
+
+/* ---------- map drawing (real data from engine.mjs) ---------- */
+const pathD = pts => pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join('');
+function baseMap(svg, frameBox) {
+  svg.setAttribute('viewBox', frameBox.join(' '));
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  const g = el('g', { class: 'roads' }, svg);
+  const major = D.roads.filter(r => /primary|secondary|tertiary/.test(r.k)), minor = D.roads.filter(r => !/primary|secondary|tertiary/.test(r.k));
+  el('path', { class: 'minor', d: minor.map(r => pathD(r.p)).join(''), 'stroke-width': 3.5 }, g);
+  el('path', { class: 'major', d: major.map(r => pathD(r.p)).join(''), 'stroke-width': 8 }, g);
+  return svg;
+}
+function drawRoute(svg, pts, attrs, ms, delay = 0) {
+  const p = el('path', { class: 'route', d: pathD(pts), ...attrs }, svg);
+  const len = p.getTotalLength();
+  const dash = attrs['stroke-dasharray'];
+  if (reduce || !len) return p;
+  if (dash) {
+    p.style.clipPath = 'none';
+    p.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, delay, fill: 'both' });
+  } else {
+    p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+    p.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: ms, delay, easing: 'cubic-bezier(.45,.05,.3,1)', fill: 'forwards' });
+  }
+  return p;
+}
+const place = id => D.places.find(p => p.id === id);
+function markers(svg, opts = {}) {
+  const g = el('g', {}, svg);
+  D.places.filter(p => p.type !== 'start' && !p.rank).forEach(p => el('circle', { cx: p.x, cy: p.y, r: 9, fill: '#7f9d8c', opacity: .8 }, g));
+  const s = place('shaniwar');
+  const sg = el('g', { class: 'marker pop', style: `animation-delay:${opts.d0 || 0}ms` }, g);
+  el('circle', { cx: s.x, cy: s.y, r: 15, fill: '#f3ecdc', stroke: '#173e33' }, sg);
+  el('text', { class: 'lbl', x: s.x + 26, y: s.y - 14, fill: '#f3ecdc' }, sg).textContent = 'Shaniwar Wada';
+  D.places.filter(p => p.rank).forEach((p, i) => {
+    const m = el('g', { class: 'marker pop', style: `animation-delay:${(opts.d0 || 0) + (opts.step || 0) * (D.order.indexOf(p.id))}ms` }, g);
+    el('circle', { cx: p.x, cy: p.y, r: 22, fill: '#ebb563', stroke: '#173e33' }, m);
+    el('text', { x: p.x, y: p.y + 1, fill: '#173e33' }, m).textContent = p.rank;
+    if (opts.labels) el('text', { class: 'lbl', x: p.x + 30, y: p.y + 8, fill: '#f3ecdc' }, m).textContent = p.name;
+  });
+}
+
+/* title map */
+const titleSvg = baseMap($('titleMap'), [60, 60, D.w - 120, D.h - 120]);
+let titleRoute = null;
+hooks.title = { enter() {
+  titleRoute?.remove(); titleSvg.querySelectorAll('.route,.mk').forEach(n => n.remove());
+  const glow = drawRoute(titleSvg, D.route, { stroke: '#ebb563', 'stroke-width': 26, 'stroke-opacity': .18, class: 'route mk' }, 3600, 500);
+  titleRoute = drawRoute(titleSvg, D.route, { stroke: '#ebb563', 'stroke-width': 8, class: 'route mk' }, 3600, 500);
+  const mg = el('g', { class: 'mk' }, titleSvg);
+  markers(mg, { d0: 300, step: 650, labels: true });
+} };
+
+/* crowd map */
+const crowdSvg = baseMap($('crowdMap'), [60, 60, D.w - 120, D.h - 120]);
+const crowdLayer = el('g', {}, crowdSvg);
+const showRoute = { dist: true, time: true };
+function drawCrowd() {
+  crowdLayer.innerHTML = '';
+  if (showRoute.dist) drawRoute(crowdLayer, D.peakDist.p, { stroke: '#ebb563', 'stroke-width': 9 }, 2400, 200);
+  if (showRoute.time) {
+    const t = drawRoute(crowdLayer, D.peakTime.p, { stroke: '#5fb3a3', 'stroke-width': 9 }, 2800, showRoute.dist ? 900 : 200);
+    t.style.strokeLinecap = 'butt';
+  }
+  markers(el('g', {}, crowdLayer), { d0: 0, step: 0 });
+}
+hooks.crowd = { enter: drawCrowd };
+['dist', 'time'].forEach(k => {
+  const b = $(k === 'dist' ? 'rcDist' : 'rcTime');
+  b.onclick = () => { showRoute[k] = !showRoute[k]; if (!showRoute.dist && !showRoute.time) showRoute[k === 'dist' ? 'time' : 'dist'] = true;
+    $('rcDist').setAttribute('aria-pressed', showRoute.dist); $('rcTime').setAttribute('aria-pressed', showRoute.time); drawCrowd(); };
+});
+
+/* ---------- counters ---------- */
+hooks.graph = { enter() {
+  document.querySelectorAll('[data-count]').forEach((n, i) => {
+    const to = +n.dataset.count; if (reduce) return;
+    const t0 = performance.now() + 200 + i * 120, dur = 1400;
+    const tick = now => { const k = Math.min(1, Math.max(0, (now - t0) / dur)); n.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US'); if (k < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+} };
+
+/* ---------- log-scale bars ---------- */
+(() => {
+  const lo = 2, hi = 6, x = v => (Math.log10(v) - lo) / (hi - lo) * 100;
+  document.querySelectorAll('#bars .bar').forEach(b => b.style.setProperty('--w', `calc(${x(+b.dataset.v)}% * .86)`));
+  const axis = $('axis'), bars = $('bars');
+  [[100, '100'], [1e3, '1k'], [1e4, '10k'], [1e5, '100k'], [1e6, '1M']].forEach(([v, l]) => {
+    const pos = `calc(${x(v)}% * .86)`;
+    const s = document.createElement('span'); s.textContent = l; s.style.left = pos; axis.appendChild(s);
+    const g = document.createElement('div'); g.className = 'grid-line'; g.style.left = pos; bars.prepend(g);
+  });
+})();
+
+/* ---------- live teaching graph (same graph as teaching-graph.mjs) ---------- */
+const POS = { A: [0, 150], B: [90, 60], C: [100, 230], D: [200, 40], E: [210, 150], F: [200, 270], G: [310, 80], H: [320, 220], I: [60, 330], J: [-40, 40], K: [420, 150] };
+const LANES = [['G','K',135],['H','K',123],['D','G',118],['E','G',123],['E','H',131],['F','H',130],['B','D',112],['B','E',175],['C','E',137],['C','F',108],['I','F',153],['J','B',132],['A','B',130],['A','C',160],['A','J',118],['A','I',190],['A','E',300]];
+const NAMES = { dijkstra: 'Dijkstra', bellman: 'Bellman–Ford' };
+const ACOL = { dijkstra: 'var(--dij)', bellman: 'var(--bf)' };
+//@@ALGO-START
+function runTrace(alg, src = 'A', dst = 'K') {
+  const N = Object.keys(POS), adj = {}, g = {}, pred = {}, ev = [];
+  N.forEach(n => { adj[n] = []; g[n] = Infinity; });
+  LANES.forEach(([a, b, w], e) => { adj[a].push([b, w, e]); adj[b].push([a, w, e]); });
+  g[src] = 0;
+  if (alg === 'bellman') {
+    for (let pass = 1; pass < N.length; pass++) {
+      let upd = 0;
+      LANES.forEach(([a, b, w], e) => [[a, b], [b, a]].forEach(([u, v]) => {
+        const cand = g[u] + w, ok = cand < g[v];
+        ev.push({ t: 'relax', u, v, w, e, cand, old: g[v], ok, gu: g[u], pass });
+        if (ok) { g[v] = cand; pred[v] = u; upd++; }
+      }));
+      ev.push({ t: 'pass', pass, upd });
+      if (!upd) break;
+    }
+  } else {
+    const heap = [[0, src]], done = new Set();
+    while (heap.length) {
+      heap.sort((x, y) => x[0] - y[0]);
+      const [gu, u] = heap.shift();
+      if (done.has(u) || gu > g[u]) { ev.push({ t: 'stale', u, gu, g: g[u] }); continue; }
+      done.add(u); ev.push({ t: 'select', u, g: g[u] });
+      if (u === dst) break;
+      for (const [v, w, e] of adj[u]) {
+        if (done.has(v)) continue;
+        const cand = g[u] + w, ok = cand < g[v];
+        ev.push({ t: 'relax', u, v, w, e, cand, old: g[v], ok, gu: g[u] });
+        if (ok) { g[v] = cand; pred[v] = u; heap.push([cand, v]); }
+      }
+    }
+  }
+  const path = [];
+  if (g[dst] < Infinity) for (let n = dst; n; n = pred[n]) path.unshift(n);
+  ev.push({ t: 'done', path, cost: g[dst] });
+  const count = t => ev.filter(x => x.t === t).length;
+  return { ev, stats: { selected: alg === 'bellman' ? '–' : count('select'), checks: count('relax'), updates: ev.filter(x => x.ok).length, passes: count('pass'), cost: g[dst] } };
+}
+//@@ALGO-END
+const TRACES = Object.fromEntries(Object.keys(NAMES).map(a => [a, runTrace(a)]));
+
+const tg = $('tg'), edgeEls = [], nodeEls = {};
+const tgEdges = el('g', {}, tg), tgNodes = el('g', {}, tg);
+LANES.forEach(([a, b, w], i) => {
+  const [x1, y1] = POS[a], [x2, y2] = POS[b];
+  edgeEls[i] = el('line', { class: 'tg-edge', x1, y1, x2, y2 }, tgEdges);
+  el('text', { class: 'tg-w', x: (x1 + x2) / 2, y: (y1 + y2) / 2 }, tgEdges).textContent = w;
+});
+Object.entries(POS).forEach(([id, [x, y]]) => {
+  const g = el('g', { class: 'tg-node' + (id === 'A' || id === 'K' ? ' endpt' : '') }, tgNodes);
+  el('circle', { cx: x, cy: y, r: 17 }, g);
+  el('text', { class: 'letter', x, y: y + 1 }, g).textContent = id;
+  const gl = el('text', { class: 'g', x, y: y - 29 }, g); gl.textContent = id === 'A' ? '0' : '∞';
+  nodeEls[id] = { g, gl };
+});
+el('text', { class: 'tg-w', x: 0, y: 186, style: 'font-family:var(--body);font-size:12px' }, tg).textContent = 'start';
+el('text', { class: 'tg-w', x: 420, y: 186, style: 'font-family:var(--body);font-size:12px' }, tg).textContent = 'target';
+
+let alg = 'dijkstra', idx = 0, timer = null, S;
+const demoSlide = document.querySelector('[data-id="demo"]');
+function freshState() { S = { g: Object.fromEntries(Object.keys(POS).map(n => [n, n === 'A' ? 0 : Infinity])), done: new Set(), tree: {}, cur: null, check: null, path: null }; }
+const fmt = v => v === Infinity ? '∞' : Math.round(v);
+function render(evt) {
+  Object.entries(nodeEls).forEach(([id, n]) => {
+    const cls = ['tg-node'];
+    if (id === 'A' || id === 'K') cls.push('endpt');
+    if (S.done.has(id)) cls.push('done'); else if (S.g[id] < Infinity) cls.push('tent');
+    if (S.cur === id) cls.push('cur');
+    n.g.setAttribute('class', cls.join(' '));
+    n.gl.textContent = fmt(S.g[id]);
+  });
+  const pathEdges = new Set();
+  if (S.path) for (let i = 1; i < S.path.length; i++) pathEdges.add(LANES.findIndex(([a, b]) => (a === S.path[i - 1] && b === S.path[i]) || (b === S.path[i - 1] && a === S.path[i])));
+  const treeEdges = new Set(Object.values(S.tree));
+  edgeEls.forEach((e, i) => e.setAttribute('class', 'tg-edge' + (pathEdges.has(i) ? ' path' : i === S.check ? ' check' : treeEdges.has(i) ? ' tree' : '')));
+  const K = $('evKind'), M = $('evMsg'), X = $('evMath');
+  if (!evt) { K.textContent = 'Ready'; M.textContent = 'Press Play, or Step to go one edge check at a time.'; X.textContent = 'g(A) = 0, every other g = ∞'; return; }
+  if (evt.t === 'select') { K.textContent = 'Select'; M.textContent = `Select ${evt.u}: smallest tentative g. Its cost is now final.`; X.textContent = `g(${evt.u}) = ${fmt(evt.g)}`; }
+  if (evt.t === 'relax') { K.textContent = alg === 'bellman' ? `Pass ${evt.pass} · check lane` : 'Check lane'; M.textContent = evt.ok ? `${evt.u} → ${evt.v} is cheaper. Update g(${evt.v}).` : evt.gu === Infinity ? `g(${evt.u}) is still ∞, so this lane cannot help ${evt.v} yet.` : `${evt.u} → ${evt.v} is not cheaper. Keep g(${evt.v}).`; X.textContent = `${fmt(evt.gu)} + ${evt.w} = ${fmt(evt.cand)} ${evt.ok ? '<' : '≥'} ${fmt(evt.old)}`; }
+  if (evt.t === 'stale') { K.textContent = 'Skip'; M.textContent = `Outdated heap entry for ${evt.u}: a cheaper cost was found later.`; X.textContent = `heap said ${evt.gu}, g(${evt.u}) = ${evt.g}`; }
+  if (evt.t === 'pass') { K.textContent = 'Pass complete'; M.textContent = evt.upd ? `Pass ${evt.pass} made ${evt.upd} update${evt.upd > 1 ? 's' : ''}. Run another pass.` : `Pass ${evt.pass} changed nothing. Stop early.`; X.textContent = `bound is V − 1 = 10 passes`; }
+  if (evt.t === 'done') { K.textContent = 'Shortest path found'; M.textContent = evt.path.join(' → '); X.textContent = `cost ${evt.cost} m · ${idx} recorded steps`; }
+}
+function apply(evt) {
+  S.check = null;
+  if (evt.t === 'select') { S.done.add(evt.u); S.cur = evt.u; }
+  if (evt.t === 'relax') { S.check = evt.e; if (alg === 'bellman') S.cur = evt.u; if (evt.ok) { S.g[evt.v] = evt.cand; S.tree[evt.v] = evt.e; } }
+  if (evt.t === 'stale') S.cur = evt.u;
+  if (evt.t === 'pass') S.cur = null;
+  if (evt.t === 'done') { S.path = evt.path; S.cur = null; if (alg === 'bellman') evt.path.forEach(n => S.done.add(n)); }
+}
+function step() {
+  const tr = TRACES[alg].ev;
+  if (idx >= tr.length) { stop(); return false; }
+  const evt = tr[idx++]; apply(evt); render(evt);
+  if (idx >= tr.length) stop();
+  return true;
+}
+function stop() { clearInterval(timer); timer = null; $('tgPlay').textContent = idx >= TRACES[alg].ev.length ? '↺ Replay' : '▶ Play'; }
+function play() {
+  if (timer) return stop();
+  if (idx >= TRACES[alg].ev.length) reset();
+  const rate = +$('tgSpeed').value;
+  $('tgPlay').textContent = '❚❚ Pause';
+  timer = setInterval(step, alg === 'bellman' ? 700 / (rate * 2.2) : 1000 / rate);
+}
+function reset() { stop(); idx = 0; freshState(); render(null); $('tgPlay').textContent = '▶ Play'; }
+function setAlg(a) {
+  alg = a; demoSlide.style.setProperty('--c', ACOL[a]);
+  document.querySelectorAll('#algoSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.alg === a));
+  [...$('scores').tBodies[0].rows].forEach(r => r.classList.toggle('on', r.dataset.alg === a));
+  reset();
+}
+$('scores').tBodies[0].innerHTML = Object.entries(TRACES).map(([a, { stats: s }]) =>
+  `<tr data-alg="${a}"><td><span class="sw" style="background:${ACOL[a]}"></span>${NAMES[a]}</td><td>${a === 'bellman' ? s.passes + ' passes' : s.selected}</td><td>${s.checks}</td><td>${s.updates}</td><td>${s.cost} m</td></tr>`).join('');
+document.querySelectorAll('#algoSeg button').forEach(b => b.onclick = () => setAlg(b.dataset.alg));
+$('tgPlay').onclick = play;
+$('tgStep').onclick = () => { stop(); if (idx >= TRACES[alg].ev.length) reset(); step(); };
+$('tgReset').onclick = reset;
+$('tgSpeed').oninput = () => { if (timer) { stop(); play(); } };
+setAlg('dijkstra');
+hooks.demo = { leave: stop };
+
+/* ---------- 120 permutations ---------- */
+const board = $('permBoard'), cols = 15, cw = 50, ch = 46;
+const costs = D.perms.map(p => p.m), mn = Math.min(...costs), mx = Math.max(...costs);
+const sorted = [...D.perms].map((p, i) => [p, i]).sort((a, b) => a[0].m - b[0].m).map(x => x[1]);
+const rankOf = new Map(sorted.map((orig, r) => [orig, r]));
+const cells = D.perms.map((p, i) => {
+  const c = document.createElement('div'); const t = (p.m - mn) / (mx - mn);
+  c.className = 'cell' + (t > .55 ? ' dark' : '') + (p.m === mn ? ' best' : '') + (p.o === '12345' ? ' trad' : '');
+  c.style.setProperty('--t', Math.round(8 + t * 92) + '%');
+  c.textContent = p.o; c.title = `${p.o.split('').join(' → ')} · ${p.m.toLocaleString('en-US')} m`;
+  board.appendChild(c); return c;
+});
+let sortedOn = false;
+function layout() { cells.forEach((c, i) => { const k = sortedOn ? rankOf.get(i) : i; c.style.transform = `translate(${(k % cols) * cw}px, ${Math.floor(k / cols) * ch}px)`; c.style.transitionDelay = reduce ? '0ms' : (k % cols) * 12 + Math.floor(k / cols) * 25 + 'ms'; }); }
+layout();
+$('sortBtn').onclick = () => { sortedOn = !sortedOn; $('sortBtn').textContent = sortedOn ? 'Show in search order' : 'Sort by distance'; layout(); };
+let scanT = [];
+function scan() {
+  scanT.forEach(clearTimeout); scanT = [];
+  sortedOn = false; $('sortBtn').textContent = 'Sort by distance'; layout();
+  if (reduce) return;
+  cells.forEach(c => c.classList.add('scan'));
+  cells.forEach((c, i) => scanT.push(setTimeout(() => c.classList.add('seen'), 300 + i * 18)));
+  scanT.push(setTimeout(() => cells.forEach(c => c.classList.remove('scan', 'seen')), 300 + cells.length * 18 + 400));
+}
+$('scanBtn').onclick = scan;
+hooks.perm = { enter: scan, leave() { scanT.forEach(clearTimeout); cells.forEach(c => c.classList.remove('scan', 'seen')); } };
+
+/* ---------- architecture packets ---------- */
+const packets = $('packets');
+if (!reduce) [['w1', 0], ['w2', .4], ['w3', .8], ['w4', 1.2], ['w5', 1.2], ['w6', 1.2]].forEach(([id, d]) => {
+  for (let k = 0; k < 2; k++) {
+    const c = el('circle', { r: 6, class: 'packet' }, packets);
+    const a = el('animateMotion', { dur: '2.4s', begin: (d + k * 1.2) + 's', repeatCount: 'indefinite' }, c);
+    el('mpath', { href: '#' + id }, a);
+  }
+});
+
+/* ---------- screenshots carousel ---------- */
+let shotI = 0, shotT = null;
+const shots = [...$('shots').querySelectorAll('img')], tabs = [...$('shotTabs').children];
+function showShot(i) {
+  shotI = i;
+  shots.forEach((s, j) => { s.classList.toggle('on', j === i); });
+  tabs.forEach((t, j) => { t.setAttribute('aria-pressed', j === i); t.style.animation = 'none'; void t.offsetWidth; t.style.animation = ''; });
+  clearTimeout(shotT); if (!reduce) shotT = setTimeout(() => showShot((shotI + 1) % shots.length), 5000);
+}
+tabs.forEach(t => t.onclick = () => showShot(+t.dataset.i));
+hooks.product = { enter: () => showShot(0), leave: () => clearTimeout(shotT) };
+
+/* ---------- typed test output ---------- */
+const TESTS = ['Both algorithms match an independent Floyd–Warshall oracle on a small graph','Actual Pune routes agree under distance, crowds and walking time','Closures cannot appear in a route; isolated destination returns no path','Five-stop optimum is the minimum of all 120 orders','Optional suggestions show exact incremental costs and accepted stops persist','Festival crowds produce a useful shorter-distance versus quicker-time comparison','Starting at the destination does not create a duplicate stop or a fake trip','Two optional stops retain all five main mandals and the traditional relative order','Trace detail does not change any result or operation count','Compact traces account for every edge check; full traces record each one','Backward steps and scrubbing reproduce the same state as a fresh forward replay','Compact heap sizes match the reconstructed heap of a full trace','Teaching graph: weights, consistency and an independent oracle','Bellman–Ford never reports a node as settled before convergence'];
+const term = $('term'); let termT = [];
+function typeTests() {
+  termT.forEach(clearTimeout); termT = [];
+  const lines = [`<span class="pr">$</span> npm test`, `<span class="dim">&gt; node --test tests/*.test.mjs</span>`,
+    ...TESTS.map((t, i) => `<span class="ok">ok</span> <span class="dim">${[6,7,8,9,10,11,12,13,15,16,18,19,20,24][i]} -</span> ${t}`),
+    `<span class="dim">…</span>`, `<span class="dim"># tests</span> 24`, `<span class="ok"># pass 24</span>`, `<span class="dim"># fail</span> 0`];
+  term.innerHTML = '';
+  if (reduce) { term.innerHTML = lines.map(l => `<div class="ln">${l}</div>`).join(''); return; }
+  lines.forEach((l, i) => termT.push(setTimeout(() => { term.querySelector('.cursor')?.remove(); term.insertAdjacentHTML('beforeend', `<div class="ln">${l}${i === lines.length - 1 ? ' <span class="cursor"></span>' : ''}</div>`); }, 400 + i * (i < 2 ? 500 : 140))));
+}
+hooks.tests = { enter: typeTests, leave: () => termT.forEach(clearTimeout) };
+
+/* ---------- marigold petals ---------- */
+const petals = $('petals');
+if (!reduce) for (let i = 0; i < 26; i++) {
+  const p = document.createElement('span'); p.className = 'petal';
+  p.style.left = Math.random() * 100 + '%'; p.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+  p.style.animationDuration = 6 + Math.random() * 6 + 's'; p.style.animationDelay = -Math.random() * 10 + 's';
+  p.style.background = i % 3 ? 'var(--marigold)' : 'var(--saffron)';
+  p.style.transform = `scale(${.6 + Math.random() * .7})`;
+  petals.appendChild(p);
+}
+
+/* ---------- start ---------- */
+const m = /^#s(\d+)$/.exec(location.hash);
+cur = 0; go(m ? +m[1] - 1 : 0);
+})();
+</script>

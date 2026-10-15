@@ -10,7 +10,7 @@
 <p align="center">
   <img alt="JavaScript ES modules" src="https://img.shields.io/badge/JavaScript-ES_Modules-b45325?style=flat-square" />
   <img alt="Node.js 20 or newer" src="https://img.shields.io/badge/Node.js-20%2B-244d3e?style=flat-square" />
-  <img alt="Three shortest path algorithms" src="https://img.shields.io/badge/Algorithms-Dijkstra_%C2%B7_Bellman--Ford_%C2%B7_A*-b45325?style=flat-square" />
+  <img alt="Two shortest path algorithms" src="https://img.shields.io/badge/Algorithms-Dijkstra_%C2%B7_Bellman--Ford-b45325?style=flat-square" />
   <img alt="Offline ready" src="https://img.shields.io/badge/Offline-Ready-244d3e?style=flat-square" />
   <img alt="No npm runtime dependencies" src="https://img.shields.io/badge/npm_dependencies-0-244d3e?style=flat-square" />
   <img alt="Three.js served locally" src="https://img.shields.io/badge/3D-Three.js_(vendored)-b45325?style=flat-square" />
@@ -29,7 +29,7 @@
 
 **DarshanDisha** lets you plan a walk through Pune's **Manache Paach Ganpati**, choose a destination such as **Dagdusheth**, and discover another Ganpati along the way. Follow your route on a bundled street map, increase the simulated crowds, close a lane, and watch the path change.
 
-Then open **Algorithm Lab** to see how **Dijkstra, Bellman–Ford, and A\*** solve the same journey. Their searches look different, but they agree on the minimum cost for the same graph and objective.
+Then open **Algorithm Lab** to see how **Dijkstra and Bellman–Ford** solve the same journey. Their searches look different, but they agree on the minimum cost for the same graph and objective.
 
 ![DarshanDisha journey planner with Pune street map, route controls, and the five Manache Ganpati](previews/darshan-desktop.jpg)
 
@@ -88,21 +88,20 @@ To publish on Vercel, see **[DEPLOYMENT.md](DEPLOYMENT.md)**. The repository inc
 3. Select **Festival peak** and **Quickest in crowds**. Compare the estimated time and distance with the alternative route.
 4. Close a lane on the map and calculate the journey again.
 5. Open **Algorithm Lab**, replay the searches, and explain why the minimum costs agree while operation counts differ.
-6. Switch to **3D Algorithm Lab**, choose the **Teaching example**, and step through Dijkstra, Bellman–Ford and A\* one edge check at a time.
+6. Switch to **3D Algorithm Lab**, choose the **Teaching example**, and step through Dijkstra and Bellman–Ford one edge check at a time.
 
 For a fuller presentation and viva preparation, see the **[demo guide](DEMO_GUIDE.md)**.
 
 ## Inside the algorithms
 
-![Algorithm Lab showing Dijkstra, Bellman–Ford, and A* search views with metrics and pseudocode](previews/algorithm-lab.jpg)
+![Dijkstra and Bellman–Ford compared on the same journey, with nodes, edge checks and compute time](previews/algorithm-comparison.jpg)
 
-### Same graph. Same objective. Three searches.
+### Same graph. Same objective. Two searches.
 
 | Algorithm | Search strategy | Worst-case time per leg | Role in the demonstration |
 | --- | --- | --- | --- |
 | **Dijkstra** | Expand the lowest known cost using a binary heap. | `O((V + E) log V)` | A dependable baseline for nonnegative weights. |
 | **Bellman–Ford** | Repeatedly relax edges, stopping early when a pass makes no updates. | `O(VE)` | Makes repeated relaxation and its operation cost visible. |
-| **A\*** | Prioritise `f(n) = g(n) + h(n)` using a binary heap. | `O((V + E) log V)` for this consistent-heuristic implementation | Directs the search toward the destination while preserving optimality. |
 
 `V` is the number of junctions and `E` is the number of lane segments. Every open lane is traversable in both directions in this model, and all weights are nonnegative. The Bellman–Ford implementation is scoped to this model; it does not provide a general negative-cycle demonstration.
 
@@ -119,7 +118,6 @@ estimated edge time = base edge time × crowd multiplier
 
 Hotspot pressure decreases with distance from selected mandals; named corridor penalties create scenario bottlenecks. These are teaching assumptions. A longer route can therefore have a lower estimated walking time.
 
-**A\* heuristic:** straight-line distance to the goal, or that distance divided by `1.25 m/s` in time mode. Stored edge lengths round upward, and crowd multipliers are at least one, preserving the geometric lower bound.
 
 ### Choosing the visiting order
 
@@ -137,7 +135,7 @@ Suggestions must add at most **400 metres** and **8 minutes of estimated walking
 
 Calculations run in a **Web Worker** on a fixed graph snapshot. The canvas renderer caches the basemap and paints search traces incrementally; walking animation interpolates along the route geometry. Replay duration is normalised for visual comparison. Actual edge checks, updates, and compute times are reported separately from animation speed.
 
-For multi-leg journeys, operation counts are summed across legs. Bellman–Ford's **nodes reached** and Dijkstra/A\*'s **nodes selected** describe different operations; use **edge checks** as the shared comparison metric. Runtime and frame rate depend on the device.
+For multi-leg journeys, operation counts are summed across legs. Bellman–Ford's **nodes reached** and Dijkstra's **nodes selected** describe different operations; use **edge checks** as the shared comparison metric. Runtime and frame rate depend on the device.
 
 ## The 3D Algorithm Lab
 
@@ -146,7 +144,7 @@ In **Algorithm Lab**, switch from **2D comparison** to **3D Algorithm Lab**. The
 - **Same data, real events.** The model uses the journey's graph, weights, closures and the very runs the planner computed. Each replay step is an event recorded by `engine.mjs`; nothing is animated that the algorithm did not do. Each journey leg is its own search, so costs and predecessors reset when you change leg.
 - **Cost pillars.** Pillar height is the current tentative cost `g`, on a fixed scale for the whole replay (units shown). Undiscovered nodes (`g = ∞`) have no pillar. Heights are algorithm costs, not terrain.
 - **Shapes, not just colours.** Spheres are undiscovered, square pillars tentative (or reached, for Bellman–Ford), round pillars settled. A ring marks the current node, an arrow the lane being checked, a raised ribbon the final path, and a red lane with ✕ a closure.
-- **Explanation panel.** The current event, the matching pseudocode line, `candidate = g(u) + w(u,v)` against the old `g(v)`, whether an update happened, and an inspector with `g`, predecessor and, for A\*, `h` and `f = g + h`. Dijkstra and A\* show live tentative priorities separately from the binary heap, which can hold outdated (stale) entries.
+- **Explanation panel.** The current event, the matching pseudocode line, `candidate = g(u) + w(u,v)` against the old `g(v)`, whether an update happened, and an inspector with `g` and predecessor. Dijkstra shows live tentative priorities separately from the binary heap, which can hold outdated (stale) entries.
 - **Teaching example.** An 11-node graph (`teaching-graph.mjs`) with straight-line-consistent weights, run through the same engine with **full traces**: every edge check, update, stale heap entry and pass boundary is a step. Scenarios include a closed lane and an unreachable destination; choosing the same From and To shows the zero-cost case.
 - **Compact traces on Pune.** Full traces of Bellman–Ford on the Pune graph would hold about 94,000 events per leg, so the planner records selections, updates and pass boundaries, and counts unsuccessful checks in the following step. The lab states this grouping.
 - **Replay controls.** Play, pause, previous, next, reset, speed, and a scrubber. Moving backward restores a sparse checkpoint and replays forward, so every position is rebuilt exactly. Replay speed is in recorded steps per second. Playback length does not measure runtime; measured operation counts and compute time are shown separately.
@@ -190,7 +188,7 @@ The application uses **HTML, CSS, vanilla JavaScript ES modules, Canvas 2D, Web 
 npm test
 ```
 
-The nine routing tests cover an independent **Floyd–Warshall oracle**, agreement across all three algorithms on Pune routes, closed and disconnected paths, heuristic consistency, all 120 five-stop orders, optional-stop detours, crowd-based rerouting, identical start/destination, and accepted extras with traditional ordering.
+The eight routing tests cover an independent **Floyd–Warshall oracle**, agreement between both algorithms on Pune routes, closed and disconnected paths, all 120 five-stop orders, optional-stop detours, crowd-based rerouting, identical start/destination, and accepted extras with traditional ordering.
 
 Ten replay tests (`tests/trace-player.test.mjs`) check that trace detail never changes results or operation counts, that compact traces account for every edge check, that stepping backward and scrubbing rebuild exactly the state of a fresh forward replay, that heap sizes and explanations match the engine, and that the teaching graph agrees with a Floyd–Warshall oracle for every source, target and scenario.
 
